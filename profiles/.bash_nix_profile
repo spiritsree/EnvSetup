@@ -1,0 +1,45 @@
+#####################################################################################################
+#                            BASH Configuration 'N' Aliases For Linux                               #
+#####################################################################################################
+
+#####################################################################################################
+#                                      Configurations                                               #
+#####################################################################################################
+
+# Bash Auto Completion
+#[ -f /etc/bash_completion ] && . /etc/bash_completion
+[ -f /etc/profile.d/bash_completion.sh ] && source /etc/profile.d/bash_completion.sh
+
+#####################################################################################################
+#                                      Aliases                                                      #
+#####################################################################################################
+
+# ls aliases
+alias ls="ls --color=auto"
+alias ll="ls -lhF --color=auto"
+alias la="ls -A"
+alias lla="ls -lhA"
+alias l="ls -CF"
+alias l.="ls -d .* --color=auto"
+alias lsd="ll | grep '^d'"
+cd() { builtin cd "$@"; ls -lh --color=auto; }
+
+# Memory related
+alias memHogsTop="ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head -20"
+alias memHogsPs="ps wwaxm -o pid,stat,vsize,rss,time,command | head"
+
+#CPU related
+alias cpu_hogs="ps wwaxr -o pid,stat,%cpu,time,command | head"
+
+# top
+alias topForever="top -d 10"
+alias ttop="top -d 10 -o %MEM"
+
+# Sockets
+alias socks="sudo ss -l"			# list all open sockets
+alias usocks="sudo ss -l -u"   		# open UDP sockets
+alias tsocks="sudo ss -l -t"   		# open TCP sockets
+
+# Network related
+alias ifinfo="ip a"
+alias listen="sudo netstat -plnt"	# listening connections

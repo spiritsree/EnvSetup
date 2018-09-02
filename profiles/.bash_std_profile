@@ -1,0 +1,973 @@
+#####################################################################################################
+#                            BASH Configuration 'N' Aliases                                         #
+#####################################################################################################
+
+#####################################################################################################
+#                                      Configurations                                               #
+#####################################################################################################
+
+# the basics
+: ${HOME=~}
+: ${LOGNAME=$(id -un)}
+: ${UNAME=$(uname)}
+
+# complete hostnames from this file
+: ${HOSTFILE=~/.ssh/known_hosts}
+
+# readline config
+: ${INPUTRC=~/.inputrc}
+
+# Bash History
+export HISTCONTROL=ignoredups
+export HISTSIZE=1000
+export HISTFILESIZE=2000
+
+# Color
+RED="\[\033[0;31m\]"
+BROWN="\[\033[0;33m\]"
+GREY="\[\033[0;97m\]"
+BLUE="\[\033[0;34m\]"
+BLUE2="\[\033[0;94m\]"
+GREEN="\[\033[0;92m\]"
+NC="\[\033[0m\]"
+SCREEN_ESC="\[\033k\033\134\]"
+
+# notify of bg job completion immediately
+set -o notify
+
+# shell opts. see bash(1) for details
+shopt -s cdspell                 >/dev/null 2>&1
+shopt -s extglob                 >/dev/null 2>&1
+shopt -s histappend              >/dev/null 2>&1
+shopt -s hostcomplete            >/dev/null 2>&1
+shopt -s interactive_comments    >/dev/null 2>&1
+shopt -u mailwarn                >/dev/null 2>&1
+shopt -s no_empty_cmd_completion >/dev/null 2>&1
+
+# disable core dumps
+ulimit -S -c 0
+
+# default umask
+umask 0022
+
+# we want the various sbins
+PATH="/usr/local/bin:$PATH:/usr/local/sbin:/usr/sbin:/sbin"
+
+# TERMCAPINFO for screen
+if [[ -n "$TERMCAP" ]] && [[ "$TERM" =~ "screen" ]]; then
+    export TERMCAP=$(echo $TERMCAP | sed -e 's/Co#8/Co#256/g')
+fi
+
+# put ~/bin first on PATH
+if [ -d "$HOME/bin" ]; then
+    PATH="$HOME/bin:$PATH"
+fi
+
+# detect interactive shell
+case "$-" in
+    *i*) INTERACTIVE=yes ;;
+    *)   unset INTERACTIVE ;;
+esac
+
+# detect login shell
+case "$0" in
+    -*) LOGIN=yes ;;
+    *)  unset LOGIN ;;
+esac
+
+# ignore backups, CVS directories, python bytecode, vim swap files
+FIGNORE="~:CVS:#:.pyc:.swp:.swa"
+
+# Git branch in prompt.
+parse_git_branch() {
+    git branch 2> /dev/null | sed -e "/^[^*]/d" -e "s/* \(.*\)/(git: \1)/"
+}
+
+# kubernetes context in prompt.
+parse_kube_context() {
+    kubectl config current-context 2> /dev/null | sed -e "s/\(.*\)/(kube: \1)/"
+}
+
+# Command prompt setup
+export PS1="\W \[\033[96m\]\$(parse_git_branch)\[\033[00m\]\[\033[31m\]\$(parse_kube_context)\[\033[00m\] $ "
+
+if [ -n "$INTERACTIVE" -a -n "$LOGIN" ]; then
+    uname -npsr
+    uptime
+fi
+
+#####################################################################################################
+#                                      Aliases                                                      #
+#####################################################################################################
+
+#---------------------------------------------------------------------------------------------------#
+#                                      System Aliases                                               #
+#---------------------------------------------------------------------------------------------------#
+
+# cd aliases
+alias .1="cd .."
+alias .2="cd ../.."
+alias .3="cd ../../.."
+alias .4="cd ../../../.."
+alias cd..="cd .."
+alias ..="cd .."
+alias ...="cd ../.."
+alias ~="cd ~"
+
+# beep
+alias beep='tput bel'
+
+# general aliases
+alias c="clear"                           # clear screen
+alias which="\which"                      # remove aliased which
+alias mkdir="mkdir -pv"                   # parent dir creation if not exists
+alias less="less -FSRXc"                  # less formatting
+alias path="echo -e ${PATH//:/\\n}"       # list path
+alias show_options="shopt"                # show options
+alias fix_stty='stty sane'                # fix stty
+mkcd() { mkdir -p "$1" && cd "$1"; }     # make dir and cd to it
+alias tee_out="tee /tmp/terminalOut.txt"  # terminal out to a file
+
+# showalias test:    Show alias
+showalias() { alias | grep --color=always -i -a1 bas | grep -v '^\s*$'; }
+
+# My Public IP
+alias myip="dig +short myip.opendns.com @resolver1.opendns.com"   # curl icanhazip.com
+alias mylocalip="ifconfig | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p'"
+alias location="curl ipinfo.io 2> /dev/null | jq ."
+
+# grep aliases
+alias grep='grep --color=always'
+alias egrep='egrep --color=always'
+alias fgrep='fgrep --color=always'
+lgrep() { 
+  if [[ -z "$@" ]]; then
+    echo
+    echo 'Usage: lgrep <pattern> [<file>]'
+    echo
+  else
+    grep --line-buffer "$@"
+  fi
+}
+
+ports() {
+  if [[ -z "${@}" ]]; then
+    echo
+    echo 'Programs listening on port.'
+    echo
+    echo 'Usage: ports <ports>'
+    echo
+  else
+    sudo lsof -iTCP -sTCP:LISTEN -n -p "$@"
+  fi
+}
+
+trunc() {
+  if [[ -z "$@" ]]; then
+    echo
+    echo 'Truncate files'
+    echo
+    echo 'Usage: trunc FILE...'
+    echo
+  else
+    for f in "$@" ; do
+      cat < /dev/null > "$f"
+    done
+  fi
+}
+
+# extract compressed files
+extract () {
+  if [[ -f "$1" ]] ; then
+    case $(echo "$1" | tr "[A-Z]" "[a-z]") in
+      *.tar.bz2)   tar xjf $1     ;;
+      *.tar.gz)    tar xzf $1     ;;
+      *.bz2)       bunzip2 $1     ;;
+      *.rar)       unrar e $1     ;;
+      *.gz)        gunzip $1      ;;
+      *.tar)       tar xf $1      ;;
+      *.tbz2)      tar xjf $1     ;;
+      *.tgz)       tar xzf $1     ;;
+      *.zip)       unzip $1       ;;
+      *.Z)         uncompress $1  ;;
+      *.7z)        7z x $1        ;;
+      *)     echo "'$1' cannot be extracted via extract()" ;;
+    esac
+  else
+    echo "'$1' is not a valid file"
+  fi
+}
+
+# weather
+weather() {
+  curl -s 'http://rss.accuweather.com/rss/liveweather_rss.asp?metric=1&locCode=en|au|sydney-ny|2135' | sed -n '/Currently:/ s/.*: \(.*\): \([0-9]*\)\([CF]\).*/\2°\3, \1/p'
+}
+
+findPid () {
+  if [[ -z "$@" ]]; then
+    echo
+    echo 'Find pid of process'
+    echo
+    echo 'Usage: findPid <process_name>'
+    echo
+  else
+    lsof -t -c "$@"
+  fi
+}
+
+# System info
+ii() {
+  echo -e "\nYou are logged on ${RED}$HOST"
+  echo -e "\n${RED}Additionnal information:${NC} " ; uname -a
+  echo -e "\n${RED}Users logged on:${NC} " ; w -h
+  echo -e "\n${RED}Current date :${NC} " ; date
+  echo -e "\n${RED}Machine stats :${NC} " ; uptime
+  echo -e "\n${RED}Current network location :${NC} " ; scselect
+  echo -e "\n${RED}Public facing IP Address :${NC} " ;myip
+  #echo -e "\n${RED}DNS Configuration:${NC} " ; scutil --dns
+  echo
+}
+
++x() {
+  if [[ -z "$@" ]]; then
+    echo
+    echo 'Executable permission for a file.'
+    echo
+    echo 'Usage: +x <file>'
+    echo
+  else
+    chmod +x "$@"
+  fi
+}
+
+gxpr() {
+  if [[ -z "$@" ]] || [[ "$@" =~ "-h" ]] || [[ "$@" =~ "--help" ]]; then
+    echo
+    echo 'Usage: gxpr <expression>'
+    echo
+    echo "Like expr(1), but uses Google's calculator to evaluate <expression>."
+    echo 'Math examples:'
+    echo '  $ gxpr "1 + 1"'
+    echo '    2'
+    echo '  $ gxpr 2 ^  16'
+    echo '    65536'
+    echo "  $ gxpr '(2 ^ 1) + (2 ^ 2) + (2 ^ 3) + (2 ^ 5)'"
+    echo '    46'
+    echo "  $ gxpr '5*9+(sqrt 10)^3='"
+    echo '    76.6227766'
+    echo
+    echo 'Conversion examples:'
+    echo '  $ gxpr 1GB in KB'
+    echo '    1048576 kilobytes'
+    echo '  $ gxpr 10 megabits in megabytes'
+    echo '    1.25 megabytes'
+    echo '  $ gxpr 2 miles in inches'
+    echo '    126720 inches'
+    echo
+  else
+    CURL='curl -s --header User-Agent:gxpr/1.0'
+    SEARCH='http://www.google.com/search'
+    EXPR=$(echo "$@" | sed -e 's/+/%2B/g' -e 's/ /+/g')
+    res=$(
+      "${CURL}" "${SEARCH}?q=${EXPR}" |
+      perl -ne '/<h2 class="r".*?>(.*)<\/h2>/ and print $1' |
+      perl -ne '/= (.*)/ and print $1' |
+      perl -pe 's/[^\x00-\x7F]//g'
+    )
+    # if we don't have a result, assume it's an invalid expression
+    if [[ -z "${res}" ]]; then
+      echo "invalid expression: $@"
+    else
+      echo "${res}"
+    fi
+  fi
+}
+
+# Start an HTTP server from a directory, optionally specifying the port
+server() {
+  if [[ "$@" =~ "-h" ]] || [[ "$@" =~ "--help" ]]; then
+    echo
+    echo 'Usage: server [<port>]'
+    echo
+  else
+    local port="${1:-8000}";
+    # Set the default Content-Type to `text/plain` instead of `application/octet-stream`
+    # And serve everything as UTF-8 (although not technically correct, this doesn’t break anything for binary files)
+    python -c $'import SimpleHTTPServer;\nmap = SimpleHTTPServer.SimpleHTTPRequestHandler.extensions_map;\nmap[""] = "text/plain";\nfor key, value in map.items():\n\tmap[key] = value + ";charset=UTF-8";\nSimpleHTTPServer.test();' "$port";
+  fi
+}
+
+#---------------------------------------------------------------------------------------------------#
+#                                      Curl Aliases                                                 #
+#---------------------------------------------------------------------------------------------------#
+
+headers() {
+  if [[ -z "$@" ]]; then
+    echo
+    echo 'Usage: headers <url>'
+    echo
+  else
+    curl -sv "$@" 2>&1 >/dev/null | \grep -v "^\*" | \grep -v "^}" | cut -c3-
+  fi
+}
+
+# Web Debug
+curlD() {
+  if [[ -z "$@" ]]; then
+    echo
+    echo 'Debug web performance.'
+    echo
+    echo 'Usage: curlD <url>'
+    echo
+  else
+    curl $@ 2> /dev/null -o /dev/null -w "dns: %{time_namelookup} connect: %{time_connect} pretransfer: %{time_pretransfer} starttransfer: %{time_starttransfer} total: %{time_total}\n"
+  fi
+}
+
+curlH() {
+  if [[ -z "$@" ]]; then
+    echo
+    echo 'Curl Headers'
+    echo
+    echo 'Usage: curlH <url>'
+    echo
+  else
+    curl -I -L $@
+  fi
+}
+
+#---------------------------------------------------------------------------------------------------#
+#                                      Security Aliases                                             #
+#---------------------------------------------------------------------------------------------------#
+
+getcertnames() {
+  if [ -z "${1}" ]; then
+    echo "ERROR: No domain specified."
+    return 1
+  fi
+
+  local domain="${1}"
+  echo "Testing ${domain}…"
+  echo ''
+
+  local tmp=$(echo -e "GET / HTTP/1.0\nEOT" | openssl s_client -connect "${domain}:443" -servername "${domain}" 2>&1)
+  if [[ "${tmp}" = *"-----BEGIN CERTIFICATE-----"* ]]; then
+    local certText=$(echo "${tmp}" | openssl x509 -text -certopt "no_aux, no_header, no_issuer, no_pubkey, no_serial, no_sigdump, no_signame, no_validity, no_version")
+    echo "Common Name:"
+    echo ''
+    echo "${certText}" | grep "Subject:" | sed -e "s/^.*CN=//" | sed -e "s/\/emailAddress=.*//"
+    echo ''
+    echo "Subject Alternative Name(s):"
+    echo ''
+    echo "${certText}" | grep -A 1 "Subject Alternative Name:" | sed -e "2s/DNS://g" -e "s/ //g" | tr "," "\n" | tail -n +2
+    return 0
+  else
+    echo 'ERROR: Certificate not found.'
+    return 1
+  fi
+}
+
+pubkey() {
+  [[ -f ~/.ssh/id_rsa.pub ]] && { cat ~/.ssh/id_rsa.pub; } || { echo 'No RSA Keys'; }
+}
+
+sshenv() {
+  if [[ -z "$@" ]]; then
+    echo
+    echo "Setup environment for MacOS's built-in ssh-agent and execute command."
+    echo "Useful when crontab commands require ssh-agent access for authentication."
+    echo
+    echo 'Usage: sshenv <command>'
+    echo
+  else
+    SSH_AUTH_SOCK=$(
+      /usr/sbin/lsof -U |
+      grep Listeners    |
+      grep ssh-agent    |
+      awk '{print $8}'
+    )
+    export SSH_AUTH_SOCK
+    exec "$@"
+  fi
+}
+
+# Random Password Generator
+randpass() {
+  if [[ -z $1 ]]; then
+    MAXSIZE=40
+  else
+    MAXSIZE=$1
+  fi
+  array1=( q w e r t y u i o p a s d f g h j k l z x c v b n m Q W E R T Y U I O P A S D F G H J K L Z X C V B N M 1 2 3 4 5 6 7 8 9 0 \! \@ \$ \% \^ \& \* \! \@ \$ \% \^ \& \* \@ \$ \% \^ \& \* ) 
+  MODNUM=${#array1[*]} 
+  pwd_len=0 
+  while [[ $pwd_len -lt $MAXSIZE ]]; do 
+      index=$(($RANDOM%$MODNUM)) 
+      echo -n "${array1[$index]}" 
+      ((pwd_len++)) 
+  done 
+  echo 
+}
+
+ssh-key-create() {
+  timestamp=`date +%s`
+  force=false
+  if [[ $@ =~ '-h' ]] || [[ $@ =~ '--help' ]]; then
+    echo
+    echo 'Usage: ssh-key-create [-h|--help] [-e|-email <email>] [-f|--force]'
+    echo
+  else
+    while [[ -n $1 ]]; do
+      if [[ $1 == '-f' ]] || [[ $1 == '--force' ]]; then
+        force=true
+        shift
+        [[ ! -f ~/.ssh/id_rsa ]] && force=false
+      elif [[ $1 == '-e' ]] || [[ $1 == '--email' ]]; then
+        shift
+        email=$1
+        shift
+        [[ -z "${email}" || "${email}" == '-f' ]] && { echo 'Provide a valid email !'; return 1; }
+      fi
+    done
+    ${force} && { mv ~/.ssh/id_rsa ~/.ssh/id_rsa.orig.${timestamp}; mv ~/.ssh/id_rsa.pub ~/.ssh/id_rsa.pub.orig.${timestamp}; }
+    if [[ -f ~/.ssh/id_rsa ]]; then
+      echo 'RSA key already exists. Not creating...'
+    else
+      if [[ -n "${email}" ]]; then
+        keygenCMD="ssh-keygen -C ${email}"
+      else
+        keygenCMD="ssh-keygen"
+      fi
+      eval "${keygenCMD} -t rsa -b 4096 -f ~/.ssh/id_rsa -q -P ''"
+      eval "$(ssh-agent -s)"
+      ssh-add -k ~/.ssh/id_rsa
+      pubkey
+    fi
+  fi
+}
+
+#---------------------------------------------------------------------------------------------------#
+#                                      Vagrant Aliases                                              #
+#---------------------------------------------------------------------------------------------------#
+
+# Vagrant
+# Use: vagrant_boxes 'ubuntu'
+vagrant_boxes() {
+  if [[ -z $1 ]]; then
+    echo
+    echo 'Usage: vagrant_boxes <search-term>'
+    echo
+    echo '  e.g: vagrant_boxes ubuntu'
+    echo
+  else
+    curl "https://app.vagrantup.com/api/v1/search?q=$1&limit=20&provider=virtualbox&sort=updated" 2> /dev/null | jq -r '.boxes[] | { tag, short_description }'
+  fi
+}
+
+
+#---------------------------------------------------------------------------------------------------#
+#                                      Kubectl Aliases                                              #
+#---------------------------------------------------------------------------------------------------#
+
+# kubectl aliases
+k() {
+  case $1 in
+    context)
+      shift
+      command kubectl config current-context
+      ;;
+    *)
+      command kubectl "$@";;
+  esac
+}
+
+#---------------------------------------------------------------------------------------------------#
+#                                      GIT Aliases                                                  #
+#---------------------------------------------------------------------------------------------------#
+
+# git aliases
+gitinfo() {
+  pushd . >/dev/null
+  # Find base of git directory
+  while [[ ! -d .git ]] && [[ ! `pwd` = "/" ]]; do cd ..; done
+  # Show various information about this git directory
+  if [ -d .git ]; then
+    echo "== Remote URL: `git remote -v`"
+    echo "== Remote Branches: "; git branch -r; echo
+    echo "== Local Branches:"; git branch; echo
+    echo "== Configuration (.git/config)"; cat .git/config; echo
+    echo "== Most Recent Commit"; git log --max-count=1; echo
+    echo "Type 'git log' for more commits, or 'git show' for full commit details."
+  else
+    echo "Not a git repository."
+  fi
+  popd >/dev/null
+}
+
+alias         g='git'
+
+# Status and Information
+alias        gb='git branch'
+alias        gs='git status'
+alias       gss='git status -s'
+alias        gt='git tag'
+alias       gtn='git tag -n'
+alias        gd='git diff'
+alias       gds='git diff --staged'
+alias       gwc='git whatchanged -p --abbrev-commit --pretty=medium'
+alias        gl='git log --decorate --color --oneline'
+alias       glg='git log --decorate --color --graph --oneline'
+alias      glga='git log --decorate --color --graph --oneline --all'
+alias       gla='git log --decorate --color --graph'
+alias      glaa='git log --decorate --color --graph --stat --all'
+
+# Staging and Commiting
+alias        ga='git add'
+alias        gu='git add -u'
+alias       gaa='git add -A'
+alias       guc='gu  && gc'
+alias       gac='gaa && gc'
+
+# Branches and Remotes
+alias        gm='git merge'
+alias       gco='git checkout'
+alias        gr='git remote'
+alias       grv='gr -v'
+alias       gra='gr add'
+alias      grap='gr set-url --add --push'
+
+# Pushing, Pulling and Deploying
+alias        gp='git push'
+alias       gpp='git push origin $(current_branch)'
+alias       gpt='gpp --tags'
+alias     gpull='git pull origin $(current_branch)'
+alias     gpdep='gpdeploy'
+alias     gpher='gpheroku'
+alias  gpdeploy='gp && cap production deploy'
+alias  gpheroku='gp && gp heroku master'
+
+# Others
+alias       grb='git rebase -i'
+alias       grt='gitroot'
+alias   gitroot='cd "$(git rev-parse --show-toplevel || echo .)"'
+alias  gitcount='git rev-list HEAD --count'
+alias   gsearch='gitsearch'
+alias gitsearch='gla -p -S'
+alias gitconfig='less -P "(END)" $(git rev-parse --show-toplevel)/.git/config'
+
+unalias gc 2>/dev/null  # avoid collision with zsh git plugin
+
+# Commits - Either inline or in editor
+gc() {
+    if [[ $# -eq 0 ]] ; then
+        git commit
+    else
+        git commit -m "$@"
+    fi
+}
+
+# Tags with Annotations
+gta() {
+  if [[ $# -eq 1 ]] ; then
+    git tag -a "$1"
+  elif [[ $# -eq 2 ]]; then
+    git tag -a "$1" -m "$2"
+  else
+    echo "invalid arguments"
+    echo "usage: gta TAG_NAME [TAG_MESSAGE]"
+    echo "examples:"
+    echo "   gta v1.2"
+    echo "   gta v0.4-beta.3 \"Added Feature X\""
+  fi
+}
+
+# Commits in a specific instance in time
+# See: http://stackoverflow.com/a/3896112/1533054
+gc-time() {
+if [[ $# -ne 2 ]] ; then
+  echo "invalid arguments"
+  echo "usage: gc-time DATETIME COMMIT_MESSAGE"
+  echo "examples:"
+  echo "   gc-time \"5 days ago\" \"Commit 5 days in the past\""
+  echo "   gc-time \"4 hours\" \"Commit 4 hours in the future\""
+  echo "   gc-time \"Fri Jul 26 19:32:10 2013 -0400\" \"Commit in specific instance in time\""
+  echo ""
+else
+
+  if [ "$(get-platform)" == 'linux' ]; then
+    local date="date"
+  elif [ "$(get-platform)" == 'apple' ]; then
+    local date="gdate"
+  fi
+
+  if ($date -d "$1") &>/dev/null; then
+    local gitdate=$($date -d "$1")
+    GIT_AUTHOR_DATE="$gitdate" GIT_COMMITTER_DATE="$gitdate" git commit -m "$2"
+  else
+    gc-time
+  fi
+fi
+}
+
+# Show git files in conflict
+git-conflicts() {
+  git ls-files -u | awk '{print $4}' | sort -u
+}
+
+# Git amend (destructive)
+git-amend() {
+  TARGET="$1"
+  if [[ -z "${TARGET}" ]]; then
+    echo 'Usage: git-amend <commit>'
+  else
+    BRANCH=$(git name-rev HEAD | cut -d' ' -f2)
+    # stash off work
+    git stash save -q --keep-index git-amend
+    # restore from stash
+    trap 'git stash pop -q stash@{git-amend} 2>/dev/null'
+    # go back in history
+    git checkout -q "$TARGET" && { 
+      # amend commit
+      git commit -v --amend
+      # apply remaining commits
+      git rebase --onto HEAD "$TARGET" "$BRANCH"
+    } || {
+      echo "git-amend: changes didn't apply cleanly" 1>&2
+      git stash pop -q stash@{git-amend} 2>/dev/null
+    }    
+  fi
+}
+
+# Git large objects in repo
+git-big-object-report() {
+  SAVEIFS=$IFS
+  IFS=$'\n'
+  git_dir=$(git rev-parse --git-dir)
+  # list all objects including their size, sort by size, take top 10
+  objects=$(
+    git verify-pack -v "$git_dir"/objects/pack/pack-*.idx |
+    grep -v chain |
+    sort -k3nr    |
+    head
+  )
+  printf "%7s %7s %-7s %-20s\n" SIZE PACK SHA1 LOCATION
+  for y in $objects; do
+    size=$((`echo $y | cut -f 5 -d ' '`/1024))
+    pack_size=$((`echo $y | cut -f 6 -d ' '`/1024))
+    sha1=$(echo $y | cut -f 1 -d ' ')
+    short=$(echo "$sha1" |cut -c1-7)
+    path=$(git rev-list --all --objects |grep $sha1 |cut -c42-)
+
+    printf "%7d %7d %-7s %-20s\n" "$size" "$pack_size" "$short" "$path"
+  done
+  echo "All sizes in KB. PACK = size of compressed object in pack file."
+  IFS=$SAVEIFS
+}
+
+# Git cut branch
+git-cut-branch() {
+  if [[ -z "$1" ]] || [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
+    echo
+    echo 'Create a new branch named <name> pointed at HEAD and reset the current branch'
+    echo 'to the head of its tracking branch. This is useful when working on master and'
+    echo 'you realize you should be on a topic branch.'
+    echo
+    echo 'Usage: git-cut-branch [-h|--help] <branch_name>'
+    echo
+  else
+    branch="$1"
+    # get the current branch for HEAD in refs/heads/<branch> form
+    ref=$(git symbolic-ref -q HEAD)
+    sha=$(git rev-parse HEAD)
+    if [[ -n "$ref" ]]; then
+      current=$(echo "$ref" | sed 's@^refs/heads/@@')
+      if [[ -n "$current" ]]; then
+        # figure out what branch we're currently tracking
+        remote=$(git config --get "branch.$current.remote" || true)
+        merge=$(git config --get "branch.$current.merge" | sed 's@refs/heads/@@')
+        tracking=''
+        # build up a sane <remote>/<branch> name
+        if [[ -n "$remote" ]] && [[ -n "$merge" ]]; then
+          tracking="$remote/$merge"
+        elif [[ -n "$merge" ]]; then
+          tracking="$merge"
+        else
+          echo "$current is not tracking anything"
+        fi
+        if [[ -n "${tracking}" ]]; then
+          # make sure there's no changes before we reset hard
+          if ! git diff-index --quiet --cached HEAD || ! git diff-files --quiet; then
+            echo 'Cannot cut branch with changes to index or working directory'
+          else
+            # reset the current branch to its tracking branch, create the new branch also
+            # tracking the original branch, and switch to it.
+            git branch "$branch"
+            git reset -q --hard "$tracking"
+            git checkout -q "$branch"
+            git branch --set-upstream-to="$tracking" "$branch"
+            git reset -q --hard "$sha"
+            echo "[$(echo "$sha" | cut -c1-7)...$(echo $(git rev-parse $tracking) | cut -c1-7)] $current"
+            echo "[0000000...$(echo $(git rev-parse HEAD) | cut -c1-7)] $branch"
+          fi
+        fi
+      else
+        echo 'You are in a weird place; get on a local branch !!!'
+      fi
+    else
+      echo 'You are not on a branch !!!'
+    fi
+  fi
+}
+
+git-find-object() {
+  if [[ $# -lt 2 ]] || [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
+    echo
+    echo 'Usage: git-find-object <id> <repo>...'
+    echo
+    echo 'Write first <repo> that includes object <id>. Useful when trying to locate'
+    echo 'a missing object in a list of repositories.'
+    echo
+    echo 'Ex: git-find-object ignore /repos/*.git'
+    echo
+  else
+    # shift off the SHA1 object id to look for
+    sha="$1"
+    shift
+    # run through each repo dir and write the path
+    # to the first one that includes the object
+    for dir in "$@"; do
+      (cd "$dir" && git cat-file -e $sha 2>/dev/null) && { echo "$dir"; }
+    done
+  fi
+}
+
+git-ignore() {
+  if [[ -z "${@}" ]]; then
+    echo
+    echo 'Add a pattern to git ignore'
+    echo
+    echo 'Usage: git-ignore pattern1 pattern2 . . patternN'
+    echo
+  else
+    git branch > /dev/null 2> /dev/null && {
+      for pattern in "$@"; do
+        echo "$pattern" | tee -a .git/info/exclude;
+      done
+    } || { echo 'Not a git repo'; }
+  fi
+}
+
+git-grab() {
+  if [[ -z "$@" ]] || [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
+    echo
+    echo 'usage: git-grab username [repo]'
+    echo
+    echo 'Get the repo of a user.'
+    echo
+  else
+    username="$1"
+    if [ -n "$2" ] ; then
+      repo="$2"
+    else
+      repo=$(basename $(pwd))
+    fi
+
+    git remote add ${username} git://github.com/${username}/${repo}.git
+    git fetch ${username}
+  fi
+}
+
+git-ls-object-refs() {
+  if [[ -z "$1" ]]; then
+    echo
+    echo 'Usage: git-ls-object-refs <object>'
+    echo
+    echo 'Find references to <object> SHA1 in refs, commits, and trees.'
+    echo
+  else
+    object_ref="$1"
+    git log --all --pretty=oneline --decorate | \grep "${object_ref}" | sed -e 's/^\([a-f0-9]\{40\}\)/Commit referenced from at least one ref: \1/'
+    for ref in $(git for-each-ref --format='%(refname)'); do
+      (git rev-list "$ref" | \grep "${object_ref}") 2>&1 | sed -e "s|^[0-9a-f]\{40\}$|Commit referenced from ${ref}|"
+    done
+    for sha in $(git rev-list --all); do
+      (git ls-tree -r "${sha}" | \grep "${object_ref}") 2>&1 | sed -e "s|^|Object referenced from tree of commit ${sha}:\n|"
+    done
+    echo
+  fi
+}
+
+git-prune-merged-branches() {
+  if [[ "$#" -eq 0 ]] || [[ "$@" =~ "--help" ]] || [[ "$@" =~ "-h" ]]; then
+    echo
+    echo 'Usage: git prune-merged-branches [-h|--help] [-fu] [-r <remote>] <merge-branch>'
+    echo
+    echo 'Delete all branches that are fully merged into <merge-branch>.'
+    echo
+    echo 'Options:'
+    echo '     -f            Really delete the branches. Without this, branches are shown but'
+    echo '                   not actually deleted.'
+    echo '     -r <remote>   Name of remote to operate on. Operate locally when not specified.'
+    echo '     -u            Fetch <remote> before determining merged branch status.'
+    echo '     -h|--help     This menu.'
+    echo
+    echo 'Examples:'
+    echo '   List local branches already merged into master for inspection:'
+    echo '      git prune-merged-branches master'
+    echo '   Delete local branches already merged into master:'
+    echo '      git prune-merged-branches -f master'
+    echo '   List branches in origin remote already merged into origin/master:'
+    echo '     git prune-merged-branches -u -r origin master'
+    echo '   Delete branches in origin remote already merged into origin/master:'
+    echo '      git prune-merged-branches -f -r origin/master'
+  else
+    # parse arguments
+    force=false
+    update=false
+    remote=''
+    while [[ -n $1 ]]; do
+      if [[ "$1" == "-f" ]]; then
+        force=true
+        shift
+      elif [[ "$1" == "-u" ]]; then
+        update=true
+        shift
+      elif [[ "$1" == "-r" ]]; then
+        shift
+        if [[ -n "$1" ]]; then
+          remote=$1
+          shift
+        else
+          echo "Please provide a branch. Use -h or --help for valid options."
+        fi
+      else
+        # remaining arg must be a branch name
+        branch="$1"
+        shift
+      fi
+    done
+    if [[ "${branch}" =~ ^-.* ]] || [[ -z "${branch}" ]]; then
+      echo "Provide a valid branch. Use -h or --help for valid options."
+    else
+      # determine branches to delete based on local or remote mode
+      if [[ -n "${remote}" ]]; then
+        ${update} && git fetch "${remote}" --prune
+        mode=Remote
+        branch_name="${remote}/${branch}"
+        branches=$(
+          git branch --no-color -a --merged "${remote}/${branch}" |
+          \grep "^..remotes/${remote}/" |
+          \grep -v "^..remotes/${remote}/${branch}$" |
+          \grep -v " -> " | 
+          sed 's|^\(..\)remotes/'${remote}'/|\1|'
+        )
+      else
+        mode=Local
+        branch_name="${branch}"
+        branches=$(
+          git branch --no-color --merged "${branch}" |
+          \grep -v "^..${branch}$" |
+          \grep -v " -> "
+        )
+      fi
+      # bail out with no branches
+      if [[ -z "${branches}" ]]; then
+        echo 'No merged branches detected.'
+      else
+        # with no -f option, just show branches that would be deleted
+        if ! ${force}; then
+          echo "${mode} branches fully merged into ${branch_name}:"
+          echo "${branches}"
+          echo 'Re-run with -f if you are sure.'
+        else
+          # actually delete the branches via push if remote or via branch -D if local
+          if [[ -n "${remote}" ]]; then
+            git push origin $(echo "${branches}" | sed 's/^../:/')
+          else
+            git branch -D $(echo "${branches}" | cut -c3-)
+          fi
+        fi
+      fi
+    fi
+  fi
+}
+
+git-prune-all() {
+  if [[ "$@" =~ "-h" ]] || [[ "$@" =~ "--help" ]]; then
+    echo
+    echo 'Usage: git-pruneall [<remote>...]'
+    echo
+    echo 'Prune branches from specified remotes, or all remotes when <remote> not specified.'
+    echo
+  else
+    REMOTES="$@"
+    test -z "${REMOTES}" && REMOTES=$(git remote)
+    for remote in $REMOTES; do
+      echo "Pruning: ${remote}"
+      git remote prune "${remote}" || true
+    done
+  fi
+}
+
+git-rel() {
+  if [[ "$@" =~ "-h" ]] || [[ "$@" =~ "--help" ]]; then
+    echo
+    echo 'Usage: git-rel [<ref>]'
+    echo
+    echo 'Shows the relationship between the current branch and <ref>. With no <ref>,'
+    echo "the current branch's remote tracking branch is used."
+    echo
+    echo 'Examples:'
+    echo '    $ git-rel'
+    echo '      15 ahead'
+    echo '      11 behind'
+    echo '    $ git-rel v1.1'
+    echo '      230 ahead'
+    echo
+  else
+    current_branch=$(git symbolic-ref -q HEAD | sed 's@refs/heads/@@')
+    remote=$(git config --get branch.${current_branch}.remote)
+    merge=$(git config --get branch.${current_branch}.merge)
+    tracking_branch="${remote}/$(echo ${merge} | sed 's@refs/heads/@@')"
+    ref="${1:-${tracking_branch}}"
+    git rev-list --left-right --abbrev-commit --abbrev $ref...HEAD |
+    cut -c1         |
+    sort            |
+    uniq -c         |
+    tr '\n' ','     |
+    sed "s/>/ahead/; s/</behind/; s/,$//g; s/,/, /g"
+  fi
+}
+
+git-up() {
+  if [[ "$@" =~ "-h" ]] || [[ "$@" =~ "--help" ]]; then
+    echo
+    echo 'Usage: git-up [<pull-args>]'
+    echo
+    echo 'Like git-pull but show a short log of changes immediately after merging.'
+    echo
+  else
+    PULL_ARGS="$@"
+    git pull $PULL_ARGS
+    echo "Log:"
+    git log --color --pretty=oneline --abbrev-commit HEAD@{1}.. | sed 's/^/  /'
+  fi
+}
+
+git-reup() {
+  if [[ "$@" =~ "-h" ]] || [[ "$@" =~ "--help" ]]; then
+    echo
+    echo 'Usage: git-reup [<pull-args>]'
+    echo
+    echo 'Like git-pull --rebase but show a short log of changes immediately after rebasing.'
+    echo
+  else
+    PULL_ARGS="--rebase=true $@"
+    git pull $PULL_ARGS
+    echo "Diff:"
+    git --no-pager diff --color --stat HEAD@{1}.. | sed 's/^/ /'
+    echo "Log:"
+    git log --color --pretty=oneline --abbrev-commit HEAD@{1}.. | sed 's/^/  /'
+  fi
+}
+

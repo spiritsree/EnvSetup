@@ -1,0 +1,160 @@
+
+############### Global Settings #############
+
+# huge scrollback buffer
+defscrollback 5000
+
+# bypass GPL notice
+startup_message off
+
+# enable bold
+attrcolor b ".I"
+
+# mouse tracking allows to switch region focus by clicking
+mousetrack on
+
+# default windows
+select 0
+
+# region separator
+caption string "%{01 c} "
+sorendition "01 c"
+
+pow_detach_msg "Screen session of \$LOGNAME \$:cr:\$:nl:ended."
+
+shell bash                      # don't start login shells
+shelltitle "$ |bash"            # no title by default - set in PS1
+defmonitor on                   # turn on monitoring
+activity "<%n>"                 # let you know when stuff happens!
+silencewait 15                  # notify when window goes silent
+bell_msg "DING! (%n)"
+vbell_msg "DING! (%n)"
+vbell on
+nethack off                     # makes error messages cryptic.
+autodetach on
+defutf8 on
+utf8 on
+altscreen on
+nonblock on
+msgminwait 1
+msgwait 1
+
+# xterm understands both im/ic and doesn't have a status line.
+# Note: Do not specify im and ic in the real termcap/info file as
+# some programs (e.g. vi) will not work anymore.
+termcap  xterm 'hs@:cs=\E[%i%d;%dr:im=\E[4h:ei=\E[4l'
+terminfo xterm 'hs@:cs=\E[%i%p1%d;%p2%dr:im=\E[4h:ei=\E[4l'
+termcap  xterm-color 'hs@:cs=\E[%i%d;%dr:im=\E[4h:ei=\E[4l'
+terminfo xterm-color 'hs@:cs=\E[%i%p1%d;%p2%dr:im=\E[4h:ei=\E[4l'
+
+# this makes backspace sane on debian systems
+termcapinfo xterm 'bc@:bs@'
+termcapinfo xterm-color 'bc@:bs@'
+
+# 80/132 column switching must be enabled for ^AW to work
+# change init sequence to not switch width
+termcapinfo  xterm 'Z0=\E[?3h:Z1=\E[?3l:is=\E[r\E[m\E[2J\E[H\E[?7h\E[?1;4;6l'
+termcapinfo  xterm-color 'Z0=\E[?3h:Z1=\E[?3l:is=\E[r\E[m\E[2J\E[H\E[?7h\E[?1;4;6l'
+
+# tell screen that xterm can switch to dark background and has function
+# keys.
+termcapinfo xterm 'VR=\E[?5h:VN=\E[?5l'
+termcapinfo xterm 'k1=\E[11~:k2=\E[12~:k3=\E[13~:k4=\E[14~'
+termcapinfo xterm 'kh=\EOH:kI=\E[2~:kD=\E[3~:kH=\EOF:kP=\E[5~:kN=\E[6~'
+termcapinfo xterm-color 'VR=\E[?5h:VN=\E[?5l'
+termcapinfo xterm-color 'k1=\E[11~:k2=\E[12~:k3=\E[13~:k4=\E[14~'
+termcapinfo xterm-color 'kh=\EOH:kI=\E[2~:kD=\E[3~:kH=\EOF:kP=\E[5~:kN=\E[6~'
+
+# 256 colors
+attrcolor b ".I"
+termcapinfo xterm 'Co#256:AB=\E[48;5;%dm:AF=\E[38;5;%dm'
+defbce on
+
+############### Key Bindings #############
+
+# escape character is C-a
+escape "^Aa"
+defescape "^Aa"
+
+bind "'" select
+bind '"' windows					# Show list of windows
+bind n next							# goto next screen
+bind p prev							# goto previous screen
+bind c screen 1						# open new shell, window numbering starts at 1 not 0
+bind r title 						# rename window
+bind 0 select 10 					# select 0th window
+bind 1 select 1						# select 1st window
+bind 2 select 2
+bind 3 select 3
+bind 4 select 4
+bind 5 select 5
+bind 6 select 6
+bind 7 select 7
+bind 8 select 8
+bind 9 select 9
+bind C clear						# clear the screen
+bind d detach 						# detach from session
+bind D pow_detach 					# detach and logout
+bind F fit 							# resize window to current region size
+bind L log 							# begins/ends logging of the current window to the file "screenlog.n"
+bind i info							# info about window
+bind K kill 						# destroy current window
+bind h split 						# split horizontally
+bind v split -v 					# split vertically
+bind t time 						# show system info
+bind w windowlist -b 				# choose windows
+bind x remove						# Kill current region
+bind X lockscreen					# lock this terminal
+bind ? help							# show screen bindings
+bind "^\" quit						# kill all windows and terminate screen
+bind ":" colon 						# enter command line mode
+bind [ copy 						# enter copy mode
+bind ] paste . 						# paste buffer to stdin queue of current window
+bind m lastmsg 						# repeat the last message displayed in the message line
+
+bind - split 						# split horizontally
+bind | split -v 					# split vertically
+
+bind "*" displays 					# show a listing of all currently attached displays
+
+bind ">" writebuf 					# write paste buffer to a file
+bind "<" readbuf 					# reads the screen-exchange file into the paste buffer
+bind = removebuf 					# removes the file used by C-a < and C-a >
+
+# navigating regions with Ctrl-arrows
+bindkey "^[[1;5D" focus left
+bindkey "^[[1;5C" focus right
+bindkey "^[[1;5A" focus up
+bindkey "^[[1;5B" focus down
+
+# F2 puts Screen into resize mode. Resize regions using hjkl keys.
+bindkey "^[OQ" eval "command -c rsz" # enter resize mode
+
+# use hjkl keys to resize regions
+bind -c rsz z eval "resize -h -5" "command -c rsz"
+bind -c rsz j eval "resize -v -5" "command -c rsz"
+bind -c rsz k eval "resize -v +5" "command -c rsz"
+bind -c rsz l eval "resize -h +5" "command -c rsz"
+
+# quickly switch between regions using tab and arrows
+bind -c rsz \t    eval "focus"       "command -c rsz" # Tab
+bind -c rsz -k kl eval "focus left"  "command -c rsz" # Left
+bind -c rsz -k kr eval "focus right" "command -c rsz" # Right
+bind -c rsz -k ku eval "focus up"    "command -c rsz" # Up
+bind -c rsz -k kd eval "focus down"  "command -c rsz" # Down
+
+# copy screen clipboard to mac clipboard
+bind b eval "writebuf" "exec sh -c 'pbcopy < /tmp/screen-exchange'"
+
+# Easy config reload
+bind R eval "source $HOME/.screenrc" "echo '.screenrc reloaded!'"
+
+############### Statusline #############
+
+backtick 101 600 600 bash $HOME/.bin/ip.sh 
+backtick 102 600 600 bash $HOME/.bin/pub_ip.sh
+backtick 103 600 5 bash $HOME/.bin/disk.sh
+hardstatus alwayslastline
+hardstatus string "%{.yk} %S %{= dg} %{.dw}%-Lw%{= dg}%{= kg}%{.kr}%n%{= dg}%{kw}:%t%{= dg}%{.kr}*%{= dg}%{.dw}%+Lw%0>%{= dg} %=%{w}|%{w}%{r} %103` %{w}|%{w}%{m} %102` %{w}|%{w}%{c} %101` %{w}|%{w} %{y}%d-%M-%Y %c "
+
+

@@ -1,0 +1,119 @@
+#####################################################################################################
+#                            BASH Configuration 'N' Aliases For Mac OS                              #
+#####################################################################################################
+
+#####################################################################################################
+#                                      Configurations                                               #
+#####################################################################################################
+
+# Bash Auto Completion
+[ -f /usr/local/etc/bash_completion ] && . /usr/local/etc/bash_completion
+
+# Export sbin path
+export PATH="/usr/local/sbin:$PATH"
+
+#####################################################################################################
+#                                      Aliases                                                      #
+#####################################################################################################
+
+# Sleep mac immediatly
+alias lock="pmset sleepnow"
+
+# Flush DNS
+alias flushdns="dscacheutil -flushcache"
+
+# ls aliases
+alias ls="ls -G"
+alias ll="ls -lhGF"
+alias la="ls -AG"
+alias lla="ls -lhAG"
+alias l="ls -CFG"
+alias l.="ls -dG .*"
+alias lsd="ll | grep '^d'"
+cd() { builtin cd "$@"; ls -lhG; }
+
+#ipinfo
+alias ipinfo="echo -e \ - Public facing IP Address: ; curl ipecho.net/plain ; echo ; echo -e \ - Internal IP Address: ;  ipconfig getifaddr en0"
+
+# finder
+alias fopen="open -a Finder ./"
+
+# trash: 	move file to trash
+trash() { command mv "$@" ~/.Trash ; }
+
+# ql: 	Opens any file in MacOS Quicklook Preview
+ql() { 
+	if [[ -z "$@" ]]; then
+		echo 'Usage: ql <files>'
+	else
+		qlmanage -p "$*" >& /dev/null;
+	fi
+}
+
+# pbcurl: curl url from clipboard
+pbcurl() {
+	if [[ $@ =~ "--help" ]] || [[ $@ =~ "-h" ]]; then
+		echo 'Usage: pbcurl [-h|--help] [curl_options]'
+	else
+		curl -L "$@" $(pbpaste)
+	fi
+}
+
+# pbindent: indent 4 spaces in clipboard text.
+pbindent() {
+	writer='pbcopy'
+	pbpaste | sed 's/^/    /' | $writer
+}
+
+# pbsed: to sed replace patterns from clipboard text.
+pbsed() {
+	if [[ -z "$@" ]]; then
+		echo 'Usage: pbsed [<sed_options>] <sed_pattern>'
+	else
+		pbpaste | sed "$@" | pbcopy
+	fi
+}
+
+# cdf: cd to frontmost dir
+cdf () {
+	currFolderPath=$( /usr/bin/osascript <<EOT
+		tell application "Finder"
+			try
+				set currFolder to (folder of the front window as alias)
+			on error
+				set currFolder to (path to desktop folder as alias)
+			end try
+			POSIX path of currFolder
+		end tell
+EOT
+	)
+	echo "cd to \"$currFolderPath\""
+	cd "$currFolderPath"
+}
+
+# Memory related
+alias memHogsTop="top -l 1 -o rsize | head -20"
+alias memHogsPs="ps wwaxm -o pid,stat,vsize,rss,time,command | head -10"
+
+# CPU related
+alias cpu_hogs="ps wwaxr -o pid,stat,%cpu,time,command | head -10"
+
+# top every 10 secs
+alias topForever="top -l 9999999 -s 10 -o cpu"
+alias ttop="top -R -F -s 10 -o rsize"
+
+# Sockets
+alias socks="lsof -i"									# all tcp/ip sockets
+alias lsocks="sudo lsof -i -P"         					# all open sockets
+alias usocks="sudo lsof -nP | grep UDP"   				# open UDP sockets
+alias tsocks="sudo lsof -nP | grep TCP"   				# open TCP sockets
+
+# Network related
+alias ifinfo='ipconfig getpacket en0'              		# info on connections for en0
+alias ifinfo1='ipconfig getpacket en1'              	# info on connections for en1
+alias listen=' sudo lsof -iTCP -sTCP:LISTEN -P -n'      # listening connections
+
+# Finder Hidden files
+alias finderShowHidden='defaults write com.apple.finder ShowAllFiles TRUE'
+alias finderHideHidden='defaults write com.apple.finder ShowAllFiles FALSE'
+
