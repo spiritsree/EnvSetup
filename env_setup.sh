@@ -9,7 +9,7 @@ PKG_INSTALLS_COMMON='bash-completion zsh zsh-completions tree git tig screen tmu
 PKG_INSTALLS_WORK='docker docker-compose kubernetes-helm kubernetes-cli kops'
 PKG_INSTALLS_PERSONAL='google-chrome utorrent atom sublime-text vlc firefox 4k-video-downloader 4k-stogram 4k-youtube-to-mp3 4k-video-to-mp3'
 PIP_INSTALLS='virtualenv awscli boto3'
-APP_PROFILES='.vimrc .gvimrc .tmux.conf .tmux-osx.conf .tmux_theme .gemrc .tigrc .screenrc .irbrc .inputrc .gitconfig .gitignore'
+APP_PROFILES='.vimrc .gvimrc .tmux.conf .tmux-osx.conf .gemrc .tigrc .screenrc .irbrc .inputrc .gitconfig .gitignore'
 
 PROFILES_DIR="./profiles"
 BIN_DIR="./bin"
