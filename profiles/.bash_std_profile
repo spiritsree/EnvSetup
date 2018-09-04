@@ -140,7 +140,7 @@ alias location="curl ipinfo.io 2> /dev/null | jq ."
 alias grep='grep --color=always'
 alias egrep='egrep --color=always'
 alias fgrep='fgrep --color=always'
-lgrep() { 
+lgrep() {
   if [[ -z "$@" ]]; then
     echo
     echo 'Usage: lgrep <pattern> [<file>]'
@@ -398,15 +398,15 @@ randpass() {
   else
     MAXSIZE=$1
   fi
-  array1=( q w e r t y u i o p a s d f g h j k l z x c v b n m Q W E R T Y U I O P A S D F G H J K L Z X C V B N M 1 2 3 4 5 6 7 8 9 0 \! \@ \$ \% \^ \& \* \! \@ \$ \% \^ \& \* \@ \$ \% \^ \& \* ) 
-  MODNUM=${#array1[*]} 
-  pwd_len=0 
-  while [[ $pwd_len -lt $MAXSIZE ]]; do 
-      index=$(($RANDOM%$MODNUM)) 
-      echo -n "${array1[$index]}" 
-      ((pwd_len++)) 
-  done 
-  echo 
+  array1=( q w e r t y u i o p a s d f g h j k l z x c v b n m Q W E R T Y U I O P A S D F G H J K L Z X C V B N M 1 2 3 4 5 6 7 8 9 0 \! \@ \$ \% \^ \& \* \! \@ \$ \% \^ \& \* \@ \$ \% \^ \& \* )
+  MODNUM=${#array1[*]}
+  pwd_len=0
+  while [[ $pwd_len -lt $MAXSIZE ]]; do
+      index=$(($RANDOM%$MODNUM))
+      echo -n "${array1[$index]}"
+      ((pwd_len++))
+  done
+  echo
 }
 
 ssh-key-create() {
@@ -626,7 +626,7 @@ git-amend() {
     # restore from stash
     trap 'git stash pop -q stash@{git-amend} 2>/dev/null'
     # go back in history
-    git checkout -q "$TARGET" && { 
+    git checkout -q "$TARGET" && {
       # amend commit
       git commit -v --amend
       # apply remaining commits
@@ -634,7 +634,7 @@ git-amend() {
     } || {
       echo "git-amend: changes didn't apply cleanly" 1>&2
       git stash pop -q stash@{git-amend} 2>/dev/null
-    }    
+    }
   fi
 }
 
@@ -858,7 +858,7 @@ git-prune-merged-branches() {
           git branch --no-color -a --merged "${remote}/${branch}" |
           \grep "^..remotes/${remote}/" |
           \grep -v "^..remotes/${remote}/${branch}$" |
-          \grep -v " -> " | 
+          \grep -v " -> " |
           sed 's|^\(..\)remotes/'${remote}'/|\1|'
         )
       else
@@ -970,4 +970,58 @@ git-reup() {
     git log --color --pretty=oneline --abbrev-commit HEAD@{1}.. | sed 's/^/  /'
   fi
 }
+
+git-del-commit() {
+  re='^[0-9]$'
+  if [[ "$@" =~ "-h" ]] || [[ "$@" =~ "--help" ]]; then
+    echo
+    echo 'Remove last commits from local repo'
+    echo
+    echo 'Usage: git-del-commit [-h|--help] [<number_of_commits>]'
+    echo
+  elif [[ $1 =~ $re ]]; then
+    echo 'Removing the below commits'
+    git log --oneline --max-count=15 | head -$1
+    git reset --soft HEAD~$1
+  else
+    echo 'Removing the below commit'
+    git log --oneline --max-count=15 | head -1
+    git reset --soft HEAD^
+  fi
+}
+
+git-clean-branch() {
+  if [[ "$@" =~ "-h" ]] || [[ "$@" =~ "--help" ]]; then
+    echo
+    echo 'Delete branch which is already pushed upstream'
+    echo
+    echo 'Usage: git-clean-branch [-h|--help] [<branch>]'
+    echo
+  elif [[ -n $1 ]]; then
+    branch=$1
+    git checkout ${branch}
+    if [[ -z "$(git diff HEAD..origin/master)" ]]; then
+      git checkout master
+      git pull
+      git branch -d ${branch}
+    else
+      echo "Branch ${branch} has uncommitted stuff"
+      git checkout master
+    fi
+  else
+    branch=$(git branch 2> /dev/null | sed -e "/^[^*]/d" -e "s/* \(.*\)/\1/")
+    if [[ -n ${branch} ]] && [[ ${branch} != 'master' ]]; then
+      if [[ -z "$(git status -s)" ]]; then
+        git checkout master
+        git pull
+        git branch -d ${branch}
+      else
+        echo "Branch ${branch} has uncommitted stuff"
+      fi
+    else
+      echo 'Either in master branch or branch cannot find'
+    fi
+  fi
+}
+
 
