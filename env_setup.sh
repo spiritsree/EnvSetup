@@ -176,13 +176,13 @@ _baseSetup() {
 		_pkgInstall "${platform}" "apt-transport-https" "${pkg_installer}"
 		# adding google cloud key to apt
 		curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | _runAsRoot apt-key add -
-		_runAsRoot touch /etc/apt/sources.list.d/kubernetes.list 
+		_runAsRoot touch /etc/apt/sources.list.d/kubernetes.list
 		echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" | _runAsRoot tee -a /etc/apt/sources.list.d/kubernetes.list
 		_runAsRoot ${pkg_installer} update -y > /dev/null
 		echo "${pkg_installer}"
 	elif [[ ${platform} == 'Linux' ]]; then
 		pkg_installer=`which yum`
-		_runAsRoot dd of=/etc/yum.repos.d/kubernetes.repo  2> /dev/null <<EOF 
+		_runAsRoot dd of=/etc/yum.repos.d/kubernetes.repo  2> /dev/null <<EOF
 [kubernetes]
 name=Kubernetes
 baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
@@ -355,6 +355,23 @@ _profiles() {
 	done
 
 	[[ ! -d ~/.bin ]] && { mkdir ~/.bin; cp ${BIN_DIR}/* ~/.bin/; } || { cp ${BIN_DIR}/* ~/.bin/; }
+
+	if [[ $platform == 'MacOS' ]]; then
+		# Copy sublime custom profiles
+		if [[ -d ~/Library/Application\ Support/Sublime\ Text\ 3 ]]; then
+			if [[ ! -f ~/Library/Application\ Support/Sublime\ Text\ 3/Packages/User/Preferences.sublime-settings ]] || [[ ${force} == 'Y' ]]; then
+				cp ${PROFILES_DIR}/Preferences.sublime-settings ~/Library/Application\ Support/Sublime\ Text\ 3/Packages/User/
+				cp ${PROFILES_DIR}/Solarized.dark.sublime-color-scheme ~/Library/Application\ Support/Sublime\ Text\ 3/Packages/User/
+				cp ${PROFILES_DIR}/Solarized.light.sublime-color-scheme ~/Library/Application\ Support/Sublime\ Text\ 3/Packages/User/
+			fi
+		fi
+
+		# Terminal Profile
+		if [[ $(defaults read com.apple.Terminal "Default Window Settings") != 'Pro' ]]; then
+			defaults write com.apple.Terminal "Default Window Settings" Pro
+			defaults write com.apple.Terminal "Startup Window Settings" Pro
+		fi
+	fi
 }
 
 # Custom Package install
@@ -453,7 +470,6 @@ function main() {
 # No package docker-compose available. -- linux
 # No package docker-machine available. -- linux
 # No package virtualbox available. --- linux
-# terminal profile (Pro) mac
 
 main $@
 
