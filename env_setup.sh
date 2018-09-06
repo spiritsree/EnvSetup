@@ -360,9 +360,10 @@ _profiles() {
         # Copy sublime custom profiles
         if [[ -d ~/Library/Application\ Support/Sublime\ Text\ 3 ]]; then
             if [[ ! -f ~/Library/Application\ Support/Sublime\ Text\ 3/Packages/User/Preferences.sublime-settings ]] || [[ ${force} == 'Y' ]]; then
-                cp ${PROFILES_DIR}/Preferences.sublime-settings ~/Library/Application\ Support/Sublime\ Text\ 3/Packages/User/
-                cp ${PROFILES_DIR}/Solarized.dark.sublime-color-scheme ~/Library/Application\ Support/Sublime\ Text\ 3/Packages/User/
-                cp ${PROFILES_DIR}/Solarized.light.sublime-color-scheme ~/Library/Application\ Support/Sublime\ Text\ 3/Packages/User/
+            	for sprofile in Preferences.sublime-settings Solarized.dark.sublime-color-scheme Solarized.light.sublime-color-scheme; do
+            		((${ARG_DEBUG})) && echo "Copying the profile ${sprofile}.."
+                	cp ${PROFILES_DIR}/${sprofile} ~/Library/Application\ Support/Sublime\ Text\ 3/Packages/User/
+                done
             fi
         fi
 
