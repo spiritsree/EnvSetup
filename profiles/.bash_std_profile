@@ -991,37 +991,7 @@ git-del-commit() {
 }
 
 git-clean-branch() {
-  if [[ "$@" =~ "-h" ]] || [[ "$@" =~ "--help" ]]; then
-    echo
-    echo 'Delete branch which is already pushed upstream'
-    echo
-    echo 'Usage: git-clean-branch [-h|--help] [<branch>]'
-    echo
-  elif [[ -n $1 ]]; then
-    branch=$1
-    git checkout ${branch}
-    if [[ -z "$(git diff HEAD..origin/master)" ]]; then
-      git checkout master
-      git pull
-      git branch -d ${branch}
-    else
-      echo "Branch ${branch} has uncommitted stuff"
-      git checkout master
-    fi
-  else
-    branch=$(git branch 2> /dev/null | sed -e "/^[^*]/d" -e "s/* \(.*\)/\1/")
-    if [[ -n ${branch} ]] && [[ ${branch} != 'master' ]]; then
-      if [[ -z "$(git status -s)" ]]; then
-        git checkout master
-        git pull
-        git branch -d ${branch}
-      else
-        echo "Branch ${branch} has uncommitted stuff"
-      fi
-    else
-      echo 'Either in master branch or branch cannot find'
-    fi
-  fi
+  git bclean
 }
 
 
