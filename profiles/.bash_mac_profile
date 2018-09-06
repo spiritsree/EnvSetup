@@ -49,15 +49,15 @@ alias topForever="top -l 9999999 -s 10 -o cpu"
 alias ttop="top -R -F -s 10 -o rsize"
 
 # Sockets
-alias socks="lsof -i"									# all tcp/ip sockets
-alias lsocks="sudo lsof -i -P"         					# all open sockets
-alias usocks="sudo lsof -nP | grep UDP"   				# open UDP sockets
-alias tsocks="sudo lsof -nP | grep TCP"   				# open TCP sockets
+alias socks="lsof -i"                                    # all tcp/ip sockets
+alias lsocks="sudo lsof -i -P"                           # all open sockets
+alias usocks="sudo lsof -nP | grep UDP"                  # open UDP sockets
+alias tsocks="sudo lsof -nP | grep TCP"                  # open TCP sockets
 
 # Network related
-alias ifinfo='ipconfig getpacket en0'              		# info on connections for en0
-alias ifinfo1='ipconfig getpacket en1'              	# info on connections for en1
-alias listen=' sudo lsof -iTCP -sTCP:LISTEN -P -n'      # listening connections
+alias ifinfo='ipconfig getpacket en0'                    # info on connections for en0
+alias ifinfo1='ipconfig getpacket en1'                   # info on connections for en1
+alias listen=' sudo lsof -iTCP -sTCP:LISTEN -P -n'       # listening connections
 
 # Finder Hidden files
 alias finderShowHidden='defaults write com.apple.finder ShowAllFiles TRUE'
@@ -70,60 +70,60 @@ alias finderHideHidden='defaults write com.apple.finder ShowAllFiles FALSE'
 cd() { builtin cd "$@"; ls -lhG; }
 
 brew-cleanup() {
-	brew update
-	brew upgrade
-	brew cleanup -s
+    brew update
+    brew upgrade
+    brew cleanup -s
 }
 
-# trash: 	move file to trash
+# trash:     move file to trash
 trash() { command mv "$@" ~/.Trash ; }
 
-# ql: 	Opens any file in MacOS Quicklook Preview
+# ql:     Opens any file in MacOS Quicklook Preview
 ql() {
-	if [[ -z "$@" ]]; then
-		echo 'Usage: ql <files>'
-	else
-		qlmanage -p "$*" >& /dev/null;
-	fi
+    if [[ -z "$@" ]]; then
+        echo 'Usage: ql <files>'
+    else
+        qlmanage -p "$*" >& /dev/null;
+    fi
 }
 
 # pbcurl: curl url from clipboard
 pbcurl() {
-	if [[ $@ =~ "--help" ]] || [[ $@ =~ "-h" ]]; then
-		echo 'Usage: pbcurl [-h|--help] [curl_options]'
-	else
-		curl -L "$@" $(pbpaste)
-	fi
+    if [[ $@ =~ "--help" ]] || [[ $@ =~ "-h" ]]; then
+        echo 'Usage: pbcurl [-h|--help] [curl_options]'
+    else
+        curl -L "$@" $(pbpaste)
+    fi
 }
 
 # pbindent: indent 4 spaces in clipboard text.
 pbindent() {
-	writer='pbcopy'
-	pbpaste | sed 's/^/    /' | $writer
+    writer='pbcopy'
+    pbpaste | sed 's/^/    /' | $writer
 }
 
 # pbsed: to sed replace patterns from clipboard text.
 pbsed() {
-	if [[ -z "$@" ]]; then
-		echo 'Usage: pbsed [<sed_options>] <sed_pattern>'
-	else
-		pbpaste | sed "$@" | pbcopy
-	fi
+    if [[ -z "$@" ]]; then
+        echo 'Usage: pbsed [<sed_options>] <sed_pattern>'
+    else
+        pbpaste | sed "$@" | pbcopy
+    fi
 }
 
 # cdf: cd to frontmost dir
 cdf () {
-	currFolderPath=$( /usr/bin/osascript <<EOT
-		tell application "Finder"
-			try
-				set currFolder to (folder of the front window as alias)
-			on error
-				set currFolder to (path to desktop folder as alias)
-			end try
-			POSIX path of currFolder
-		end tell
+    currFolderPath=$( /usr/bin/osascript <<EOT
+        tell application "Finder"
+            try
+                set currFolder to (folder of the front window as alias)
+            on error
+                set currFolder to (path to desktop folder as alias)
+            end try
+            POSIX path of currFolder
+        end tell
 EOT
-	)
-	echo "cd to \"$currFolderPath\""
-	cd "$currFolderPath"
+    )
+    echo "cd to \"$currFolderPath\""
+    cd "$currFolderPath"
 }
