@@ -11,92 +11,92 @@
     email =
 
 [alias]
-    a 			= add --all
-    aliases 	= !git config -l | grep alias
+    a           = add --all
+    aliases     = !git config -l | grep alias
     ; amend: amend the saved commit
-    amend 		= commit -a --amend
-    assume 		= update-index --assume-unchanged
-    assumed 	= "!git ls-files -v | grep ^h | cut -c 3-"
-    assumeall 	= "!git status -s | awk {'print $2'} | xargs git assume"
+    amend       = commit -a --amend
+    assume      = update-index --assume-unchanged
+    assumed     = "!git ls-files -v | grep ^h | cut -c 3-"
+    assumeall   = "!git status -s | awk {'print $2'} | xargs git assume"
     ; bclean: switches to master, runs git up to pull the changes, deletes all branches which are merged to master.
-    bclean 		= "!f() { git checkout ${1-master} && git branch --merged ${1-master} | grep -v " ${1-master}$" | xargs git branch -d; }; f"
-    br 			= branch
-    bra 		= branch -a
-    brr 		= branch -r
-    brv   		= !git branch --color -v
-    ca 			= commit -a
-    changes 	= diff --name-status -r
-    ci   		= commit
-    cl 			= clone
+    bclean      = "!f() { git checkout ${1-master} && git branch --merged ${1-master} | grep -v " ${1-master}$" | xargs git branch -d; }; f"
+    br          = branch
+    bra         = branch -a
+    brr         = branch -r
+    brv         = !git branch --color -v
+    ca          = commit -a
+    changes     = diff --name-status -r
+    ci          = commit
+    cl          = clone
     ; cm: adds all changes including untracked files to the index and commit with the message provided
-    cm 			= !git add -A && git commit -m
-    co   		= checkout
-    cob 		= checkout -b
-    d 			= diff
-    dc 			= diff --cached
-    diffstat	= diff --stat -r
-    done 		= "!f() { git branch | grep "$1" | cut -c 3- | grep -v done | xargs -I{} git branch -m {} done-{}; }; f"
-    dr   		= "!f() { git diff "$1"^.."$1"; }; f"
+    cm          = !git add -A && git commit -m
+    co          = checkout
+    cob         = checkout -b
+    d           = diff
+    dc 	        = diff --cached
+    diffstat    = diff --stat -r
+    done        = "!f() { git branch | grep "$1" | cut -c 3- | grep -v done | xargs -I{} git branch -m {} done-{}; }; f"
+    dr          = "!f() { git diff "$1"^.."$1"; }; f"
     ; ec: open gitconfig in default editor
-    ec 			= config --global -e
-    empty 		= "!git commit -am\"[empty] Initial commit\" --allow-empty"
-    f 			= fetch
-    gra 		= "!f() { A=$(pwd) && TOPLEVEL=$(git rev-parse --show-toplevel) && cd $TOPLEVEL && git grep --full-name -In $1 | xargs -I{} echo $TOPLEVEL/{} && cd $A; }; f"
-    l 			= log --oneline --max-count=15
-    la 			= "!git config -l | grep alias | cut -c 7-"
-    lap 		= "!f() { git --git-dir=$1 format-patch -k -1 --stdout $2 | git am -3 -k; }; f"
-    last 		= "!gvim $(git show HEAD --format="" --name-only | grep -e .*md$ | xargs)"
-    lastcommit	= log ORIG_HEAD.. --stat --no-merges
-    lasttag 	= describe --tags --abbrev=0
-    lc   		= diff --cached HEAD^
-    lds			= log --pretty=format:\"%C(yellow)%h\\ %ad%C(red)%d\\ %C(reset)%s%C(cyan)\\ [%cn]\" --decorate=full --date=short --max-count=20
-    lg 			= log --oneline --graph --decorate --max-count 25
-    ll   		= log --pretty=format:\"%C(yellow)%h%C(reset)%C(red)%d%C(reset) %s %C(cyan)[%cn]%C(reset)\" --decorate=full --numstat --abbrev-commit --max-count=10
-    ls   		= log --pretty=format:\"%C(yellow)%h%C(reset)%C(red)%d%C(reset) %s %C(cyan)[%cn]%C(reset)\" --decorate=full --abbrev-commit --max-count=20
-    lt 			= describe --tags --abbrev=0
+    ec          = config --global -e
+    empty       = "!git commit -am\"[empty] Initial commit\" --allow-empty"
+    f           = fetch
+    gra         = "!f() { A=$(pwd) && TOPLEVEL=$(git rev-parse --show-toplevel) && cd $TOPLEVEL && git grep --full-name -In $1 | xargs -I{} echo $TOPLEVEL/{} && cd $A; }; f"
+    l           = log --oneline --max-count=15
+    la          = "!git config -l | grep alias | cut -c 7-"
+    lap         = "!f() { git --git-dir=$1 format-patch -k -1 --stdout $2 | git am -3 -k; }; f"
+    last        = "!gvim $(git show HEAD --format="" --name-only | grep -e .*md$ | xargs)"
+    lastcommit  = log ORIG_HEAD.. --stat --no-merges
+    lasttag     = describe --tags --abbrev=0
+    lc          = diff --cached HEAD^
+    lds         = log --pretty=format:\"%C(yellow)%h\\ %ad%C(red)%d\\ %C(reset)%s%C(cyan)\\ [%cn]\" --decorate=full --date=short --max-count=20
+    lg          = log --oneline --graph --decorate --max-count 25
+    ll          = log --pretty=format:\"%C(yellow)%h%C(reset)%C(red)%d%C(reset) %s %C(cyan)[%cn]%C(reset)\" --decorate=full --numstat --abbrev-commit --max-count=10
+    ls          = log --pretty=format:\"%C(yellow)%h%C(reset)%C(red)%d%C(reset) %s %C(cyan)[%cn]%C(reset)\" --decorate=full --abbrev-commit --max-count=20
+    lt          = describe --tags --abbrev=0
     ; new: new commits by the last command, e.g: git new HEAD
-    new  		= !sh -c 'git log $1@{1}..$1@{0} "$@"'
-    newmd 		= "!gvim $(git status -s | awk {'print $2'})"
-    ours 		= "!f() { git co --ours $@ && git add $@; }; f" # conflict/merges
-    r 			= remote -v
-    r1 			= reset HEAD^
-    r2 			= reset HEAD^^
+    new         = !sh -c 'git log $1@{1}..$1@{0} "$@"'
+    newmd       = "!gvim $(git status -s | awk {'print $2'})"
+    ours        = "!f() { git co --ours $@ && git add $@; }; f" # conflict/merges
+    r           = remote -v
+    r1          = reset HEAD^
+    r2          = reset HEAD^^
     ; ra: git ra upstream org/repo
-    ra 			= !f() { git remote add $1 https://github.com/$2.git; }; f"
-    rao 		= remote add origin
-    rau 		= remote add upstream
-    rem 		= "!git config -l | grep remote.*url | tail -n +2"
-    rh 			= reset --hard
-    rh1 		= reset HEAD^ --hard
-    rh2 		= reset HEAD^^ --hard
-    rso 		= remote show origin
-    rsu 		= remote show upstream
-    s 			= status
-    sa 			= stash apply
+    ra          = !f() { git remote add $1 https://github.com/$2.git; }; f"
+    rao         = remote add origin
+    rau         = remote add upstream
+    rem         = "!git config -l | grep remote.*url | tail -n +2"
+    rh          = reset --hard
+    rh1         = reset HEAD^ --hard
+    rh2         = reset HEAD^^ --hard
+    rso         = remote show origin
+    rsu         = remote show upstream
+    s           = status
+    sa          = stash apply
     ; save: adds all changes including untracked files and creates a commit
-    save 		= !git add -A && git commit -m 'TEMP_CHANGES'
-    sba 		= "!f() { git subtree add --prefix $2 $1 master --squash; }; f"
-    sbu 		= "!f() { git subtree pull --prefix $2 $1 master --squash; }; f"
-    serve 		= daemon --reuseaddr --verbose  --base-path=. --export-all ./.git
-    sl 			= stash list
+    save        = !git add -A && git commit -m 'TEMP_CHANGES'
+    sba         = "!f() { git subtree add --prefix $2 $1 master --squash; }; f"
+    sbu         = "!f() { git subtree pull --prefix $2 $1 master --squash; }; f"
+    serve       = daemon --reuseaddr --verbose  --base-path=. --export-all ./.git
+    sl          = stash list
     ; sortdiff: changes apart from position changes
-    sortdiff 	= !sh -c 'git diff "$@" | grep "^[+-]" | sort --key=1.2 | uniq -u -s1'
-    ss 			= stash save
-    st 			= status -sb --ignore-submodules=untracked
-    stsh 		= !CURRENT=$(git symbolic-ref HEAD) && git symbolic-ref HEAD refs/heads/stash && git commit -a -m stashed && git checkout $CURRENT
-    theirs 		= "!f() { git co --theirs $@ && git add $@; }; f"
-    unassume 	= update-index --no-assume-unchanged
+    sortdiff    = !sh -c 'git diff "$@" | grep "^[+-]" | sort --key=1.2 | uniq -u -s1'
+    ss          = stash save
+    st          = status -sb --ignore-submodules=untracked
+    stsh        = !CURRENT=$(git symbolic-ref HEAD) && git symbolic-ref HEAD refs/heads/stash && git commit -a -m stashed && git checkout $CURRENT
+    theirs      = "!f() { git co --theirs $@ && git add $@; }; f"
+    unassume    = update-index --no-assume-unchanged
     unassumeall = "!git assumed | xargs git update-index --no-assume-unchanged"
-    undo 		= "!f() { git reset --hard $(git rev-parse --abbrev-ref HEAD)@{${1-1}}; }; f"
-    unsave 		= reset HEAD~1 --mixed
+    undo        = "!f() { git reset --hard $(git rev-parse --abbrev-ref HEAD)@{${1-1}}; }; f"
+    unsave      = reset HEAD~1 --mixed
     ; up: pulls changes from the remote, rebase any local commits after pull, removes remote-tracking branches which no longer exists on remote.
     ; ! prefix executes in shell and allows any commands, not only git commands
-    up 			= !git pull --rebase --prune $@ && git submodule update --init --recursive
+    up          = !git pull --rebase --prune $@ && git submodule update --init --recursive
     ; wip: only commits tracked changes
-    wip 		= commit -am "WIP"
+    wip         = commit -am "WIP"
     ; wipe: commits everything, and then does a hard reset to remove that commit, git reflog can get the SHA back
-    wipe 		= "!f() { rev=$(git rev-parse ${1-HEAD}); git add -A && git commit --allow-empty -qm 'WIPE SAVEPOINT' && git reset $rev --hard; }; f"
-    wl 			= worktree list
+    wipe        = "!f() { rev=$(git rev-parse ${1-HEAD}); git add -A && git commit --allow-empty -qm 'WIPE SAVEPOINT' && git reset $rev --hard; }; f"
+    wl          = worktree list
 
 [color]
     diff   = auto
