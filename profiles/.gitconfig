@@ -25,14 +25,16 @@
     brr 		= branch -r
     brv   		= !git branch --color -v
     ca 			= commit -a
-    cl 			= clone
+    changes 	= diff --name-status -r
     ci   		= commit
+    cl 			= clone
     ; cm: adds all changes including untracked files to the index and commit with the message provided
     cm 			= !git add -A && git commit -m
     co   		= checkout
     cob 		= checkout -b
     d 			= diff
     dc 			= diff --cached
+    diffstat	= diff --stat -r
     done 		= "!f() { git branch | grep "$1" | cut -c 3- | grep -v done | xargs -I{} git branch -m {} done-{}; }; f"
     dr   		= "!f() { git diff "$1"^.."$1"; }; f"
     ; ec: open gitconfig in default editor
@@ -44,6 +46,7 @@
     la 			= "!git config -l | grep alias | cut -c 7-"
     lap 		= "!f() { git --git-dir=$1 format-patch -k -1 --stdout $2 | git am -3 -k; }; f"
     last 		= "!gvim $(git show HEAD --format="" --name-only | grep -e .*md$ | xargs)"
+    lastcommit	= log ORIG_HEAD.. --stat --no-merges
     lasttag 	= describe --tags --abbrev=0
     lc   		= diff --cached HEAD^
     lds			= log --pretty=format:\"%C(yellow)%h\\ %ad%C(red)%d\\ %C(reset)%s%C(cyan)\\ [%cn]\" --decorate=full --date=short --max-count=20
@@ -51,6 +54,7 @@
     ll   		= log --pretty=format:\"%C(yellow)%h%C(reset)%C(red)%d%C(reset) %s %C(cyan)[%cn]%C(reset)\" --decorate=full --numstat --abbrev-commit --max-count=10
     ls   		= log --pretty=format:\"%C(yellow)%h%C(reset)%C(red)%d%C(reset) %s %C(cyan)[%cn]%C(reset)\" --decorate=full --abbrev-commit --max-count=20
     lt 			= describe --tags --abbrev=0
+    ; new: new commits by the last command, e.g: git new HEAD
     new  		= !sh -c 'git log $1@{1}..$1@{0} "$@"'
     newmd 		= "!gvim $(git status -s | awk {'print $2'})"
     ours 		= "!f() { git co --ours $@ && git add $@; }; f" # conflict/merges
@@ -73,9 +77,13 @@
     save 		= !git add -A && git commit -m 'TEMP_CHANGES'
     sba 		= "!f() { git subtree add --prefix $2 $1 master --squash; }; f"
     sbu 		= "!f() { git subtree pull --prefix $2 $1 master --squash; }; f"
+    serve 		= daemon --reuseaddr --verbose  --base-path=. --export-all ./.git
     sl 			= stash list
+    ; sortdiff: changes apart from position changes
+    sortdiff 	= !sh -c 'git diff "$@" | grep "^[+-]" | sort --key=1.2 | uniq -u -s1'
     ss 			= stash save
     st 			= status -sb --ignore-submodules=untracked
+    stsh 		= !CURRENT=$(git symbolic-ref HEAD) && git symbolic-ref HEAD refs/heads/stash && git commit -a -m stashed && git checkout $CURRENT
     theirs 		= "!f() { git co --theirs $@ && git add $@; }; f"
     unassume 	= update-index --no-assume-unchanged
     unassumeall = "!git assumed | xargs git update-index --no-assume-unchanged"

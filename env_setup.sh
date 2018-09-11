@@ -5,11 +5,11 @@
 ########################################################################################################
 
 # Global Vars
-PKG_INSTALLS_COMMON='bash-completion zsh zsh-completions tree git tig screen tmux ruby jq python3 pip3 htop'
+PKG_INSTALLS_COMMON='bash-completion zsh zsh-completions tree git tig screen tmux ruby jq python3 pip3 htop yamllint jsonlint'
 PKG_INSTALLS_WORK='docker docker-compose kubernetes-helm kubernetes-cli kops'
 PKG_INSTALLS_PERSONAL='google-chrome utorrent atom sublime-text vlc firefox 4k-video-downloader 4k-stogram 4k-youtube-to-mp3 4k-video-to-mp3 dash'
 PIP_INSTALLS='virtualenv awscli boto3'
-APP_PROFILES='.vimrc .gvimrc .tmux.conf .tmux-osx.conf .gemrc .tigrc .screenrc .irbrc .inputrc .gitconfig .gitignore'
+APP_PROFILES='.vimrc .gvimrc .tmux.conf .tmux-osx.conf .gemrc .tigrc .screenrc .irbrc .inputrc .gitconfig .gitignore .yamllint'
 
 PROFILES_DIR="./profiles"
 BIN_DIR="./bin"
@@ -360,9 +360,10 @@ _profiles() {
         # Copy sublime custom profiles
         if [[ -d ~/Library/Application\ Support/Sublime\ Text\ 3 ]]; then
             if [[ ! -f ~/Library/Application\ Support/Sublime\ Text\ 3/Packages/User/Preferences.sublime-settings ]] || [[ ${force} == 'Y' ]]; then
-                cp ${PROFILES_DIR}/Preferences.sublime-settings ~/Library/Application\ Support/Sublime\ Text\ 3/Packages/User/
-                cp ${PROFILES_DIR}/Solarized.dark.sublime-color-scheme ~/Library/Application\ Support/Sublime\ Text\ 3/Packages/User/
-                cp ${PROFILES_DIR}/Solarized.light.sublime-color-scheme ~/Library/Application\ Support/Sublime\ Text\ 3/Packages/User/
+            	for sprofile in Preferences.sublime-settings Solarized.dark.sublime-color-scheme Solarized.light.sublime-color-scheme; do
+            		((${ARG_DEBUG})) && echo "Copying the profile ${sprofile}.."
+                	cp ${PROFILES_DIR}/${sprofile} ~/Library/Application\ Support/Sublime\ Text\ 3/Packages/User/
+                done
             fi
         fi
 
