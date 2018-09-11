@@ -5,7 +5,7 @@
 ########################################################################################################
 
 # Global Vars
-PKG_INSTALLS_COMMON='bash-completion zsh zsh-completions tree git tig screen tmux ruby jq python3 pip3 htop yamllint jsonlint'
+PKG_INSTALLS_COMMON='bash-completion zsh zsh-completions tree git tig screen tmux ruby jq python3 pip3 htop yamllint jsonlint shellcheck'
 PKG_INSTALLS_WORK='docker docker-compose kubernetes-helm kubernetes-cli kops'
 PKG_INSTALLS_PERSONAL='google-chrome utorrent atom sublime-text vlc firefox 4k-video-downloader 4k-stogram 4k-youtube-to-mp3 4k-video-to-mp3 dash'
 PIP_INSTALLS='virtualenv awscli boto3'
@@ -464,13 +464,6 @@ function main() {
         _profiles ${platform} 'N'
     fi
 }
-
-# vagrant - native ubuntu
-# virtualbox - native ubuntu
-# terraform
-# No package docker-compose available. -- linux
-# No package docker-machine available. -- linux
-# No package virtualbox available. --- linux
 
 main $@
 
