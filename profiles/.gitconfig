@@ -33,7 +33,7 @@
     co          = checkout
     cob         = checkout -b
     d           = diff
-    dc 	        = diff --cached
+    dc          = diff --cached
     diffstat    = diff --stat -r
     done        = "!f() { git branch | grep "$1" | cut -c 3- | grep -v done | xargs -I{} git branch -m {} done-{}; }; f"
     dr          = "!f() { git diff "$1"^.."$1"; }; f"
