@@ -5,7 +5,7 @@
 ########################################################################################################
 
 # Global Vars
-PKG_INSTALLS_COMMON='bash-completion zsh zsh-completions tree git tig screen tmux ruby jq python3 pip3 htop yamllint jsonlint shellcheck'
+PKG_INSTALLS_COMMON='bash-completion zsh zsh-completions watch tree git tig screen tmux ruby jq python3 pip3 htop yamllint jsonlint shellcheck jid'
 PKG_INSTALLS_WORK='docker docker-compose kubernetes-helm kubernetes-cli kops'
 PKG_INSTALLS_PERSONAL='google-chrome utorrent atom sublime-text vlc firefox 4k-video-downloader 4k-stogram 4k-youtube-to-mp3 4k-video-to-mp3 dash'
 PIP_INSTALLS='virtualenv awscli boto3'
@@ -474,4 +474,5 @@ main $@
 # kubectl: curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/darwin/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin
 # kops: wget -O kops https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)/kops-linux-amd64 && chmod +x ./kops && sudo mv ./kops /usr/local/bin/
 # zsh: https://ohmyz.sh/
+# jid: https://github.com/simeji/jid
 

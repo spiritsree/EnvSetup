@@ -165,6 +165,8 @@ if [[ -n $(which yamllint) ]] && [[ -f ~/.yamllint ]]; then
     alias yamllint="yamllint -c ~/.yamllint"
 fi
 
+alias fit="cut -c-$(tput cols)"
+
 islogin() {
     if [[ "$0" == '-bash' ]] ;then
         echo 'Login Shell'
@@ -531,6 +533,21 @@ k() {
         *)
             command kubectl "$@";;
     esac
+}
+
+alias kswitch='kubectl config use-context'
+alias knamespace='kubectl config set-context `kubectl config current-context` --namespace'
+alias kcontext='kubectl config current-context'
+k-pods() {
+    if [[ "$@" =~ '-h' ]] || [[ "$@" =~ '--help' ]]; then
+        echo
+        echo 'Usage: kpods [node_name]'
+        echo
+    elif [[ -n $1 ]]; then
+        kubectl get pods --all-namespaces -o wide --field-selector=spec.nodeName=$1
+    else
+        kubectl get pods --all-namespaces -o wide --sort-by=.spec.nodeName
+    fi
 }
 
 #---------------------------------------------------------------------------------------------------#
