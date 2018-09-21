@@ -5,8 +5,8 @@
 ########################################################################################################
 
 # Global Vars
-PKG_INSTALLS_COMMON='bash-completion zsh zsh-completions watch tree git tig screen tmux ruby jq python3 pip3 htop yamllint jsonlint shellcheck jid'
-PKG_INSTALLS_WORK='docker docker-compose kubernetes-helm kubernetes-cli kops'
+PKG_INSTALLS_COMMON='bash-completion zsh zsh-completions watch tree git tig screen tmux ruby jq yq python3 pip3 htop yamllint jsonlint shellcheck jid'
+PKG_INSTALLS_WORK='docker docker-compose kubernetes-helm kubernetes-cli kops vagrant virtualbox terraform'
 PKG_INSTALLS_PERSONAL='google-chrome utorrent atom sublime-text vlc firefox 4k-video-downloader 4k-stogram 4k-youtube-to-mp3 4k-video-to-mp3 dash'
 PIP_INSTALLS='virtualenv awscli boto3'
 APP_PROFILES='.vimrc .gvimrc .tmux.conf .tmux-osx.conf .gemrc .tigrc .screenrc .irbrc .inputrc .gitconfig .gitignore .yamllint'
@@ -223,7 +223,11 @@ _pkgInstall() {
     local package=$2
     local pkg_installer=$3
     if [[ ${platform} == 'MacOS' ]]; then
-        ${pkg_installer} list ${package} > /dev/null 2>&1 || { ((${ARG_DEBUG})) && echo "Installing ${package}..."; ${pkg_installer} install ${package} > /dev/null; }
+        ${pkg_installer} list ${package} > /dev/null 2>&1
+        brew_present=$?
+       ${pkg_installer} cask list ${package} > /dev/null 2>&1
+        brew_cask_present=$?
+        (( brew_present && brew_cask_present )) && { ((${ARG_DEBUG})) && echo "Installing ${package}..."; ${pkg_installer} install ${package} > /dev/null 2>&1; initial_status=$?; (( initial_status )) && ${pkg_installer} cask install ${package} > /dev/null 2>&1; }
     elif [[ ${platform} == 'Ubuntu' ]]; then
         dpkg -s "$package" >/dev/null 2>&1 || { ((${ARG_DEBUG})) && echo "Installing ${package}..."; _runAsRoot ${pkg_installer} install ${package} -y > /dev/null; }
     elif [[ ${platform} == 'Linux' ]]; then
@@ -287,24 +291,35 @@ _profiles() {
 
     # Adding system bashrc
     if [[ $(cat ${bash_rc_file} 2> /dev/null | \grep -v '^#' | \grep '/etc/bashrc' | \grep 'bashrc' | wc -l) -eq 0 ]]; then
+        ((${ARG_DEBUG})) && echo 'Setting up /etc/bashrc'
         [[ -f /etc/bashrc ]] && echo '[ -r /etc/bashrc ] && . /etc/bashrc' >> ${bash_rc_file}
+    fi
+
+    # A custom profile where you can add your own aliases or functions
+    if [[ $(cat ${bash_rc_file} 2> /dev/null | grep '.bash_office_profile' | wc -l) -eq 0 ]]; then
+        ((${ARG_DEBUG})) && echo 'Setting up ~/.bash_office_profile - You can add your custom stuff here.'
+        echo '[ -f ~/.bash_office_profile ] && . ~/.bash_office_profile' >> ${bash_rc_file}
     fi
 
     # Adding custom profiles
     if [[ $platform == 'MacOS' ]]; then
         cp ${PROFILES_DIR}/.bash_{mac,std}_profile ~/
         if [[ $(cat ${bash_rc_file} 2> /dev/null | grep '.bash_std_profile' | wc -l) -eq 0 ]]; then
+            ((${ARG_DEBUG})) && echo 'Setting up ~/.bash_std_profile'
             echo '[ -f ~/.bash_std_profile ] && . ~/.bash_std_profile' >> ${bash_rc_file}
         fi
         if [[ $(cat ${bash_rc_file} 2> /dev/null | grep '.bash_mac_profile' | wc -l) -eq 0 ]]; then
+            ((${ARG_DEBUG})) && echo 'Setting up ~/.bash_mac_profile'
             echo '[ -f ~/.bash_mac_profile ] && . ~/.bash_mac_profile' >> ${bash_rc_file}
         fi
     else
         cp ${PROFILES_DIR}/.bash_{nix,std}_profile ~/
         if [[ $(cat ${bash_rc_file} 2> /dev/null | grep '.bash_std_profile' | wc -l) -eq 0 ]]; then
+            ((${ARG_DEBUG})) && echo 'Setting up ~/.bash_std_profile'
             echo '[ -f ~/.bash_std_profile ] && . ~/.bash_std_profile' >> ${bash_rc_file}
         fi
         if [[ $(cat ${bash_rc_file} 2> /dev/null | grep '.bash_nix_profile' | wc -l) -eq 0 ]]; then
+            ((${ARG_DEBUG})) && echo 'Setting up ~/.bash_nix_profile'
             echo '[ -f ~/.bash_nix_profile ] && . ~/.bash_nix_profile' >> ${bash_rc_file}
         fi
     fi
@@ -313,8 +328,10 @@ _profiles() {
     file_length=$(cat ${bash_profile_file} | wc -l | tr -d '[:space:]')
     bash_rc_pos=$(cat -n ${bash_profile_file} | \grep '~/.bashrc' | sed -e 's/^[ \t]*//' | \grep -Ev '^\d+\t?#' | awk '{ print $1 }' | head -1)
     if [[ $(cat ${bash_profile_file} 2> /dev/null | \grep '~/.bashrc' | wc -l | tr -d '[:space:]') -eq 0 ]]; then
+        ((${ARG_DEBUG})) && echo 'Setting up ~/.bashrc'
         echo '[ -f ~/.bashrc ] && . ~/.bashrc' >> ${bash_profile_file}
     elif [[ ${bash_rc_pos} -le $((file_length - 1)) ]]; then
+        ((${ARG_DEBUG})) && echo "Rearranging position of ~/.bashrc profile in ${bash_profile_file}"
         echo '[ -f ~/.bashrc ] && . ~/.bashrc' >> ${bash_profile_file}
         if [[ $platform == 'MacOS' ]]; then
             sed -i '' "${bash_rc_pos}d" ${bash_profile_file}
@@ -364,6 +381,14 @@ _profiles() {
             		((${ARG_DEBUG})) && echo "Copying the profile ${sprofile}.."
                 	cp ${PROFILES_DIR}/${sprofile} ~/Library/Application\ Support/Sublime\ Text\ 3/Packages/User/
                 done
+            fi
+        fi
+
+        # Copy Terminal profile
+        if [[ -d ~/Library/Preferences ]]; then
+            if [[ ! -f ~/Library/Preferences/com.apple.Terminal.plist ]] || [[ ${force} == 'Y' ]]; then
+                ((${ARG_DEBUG})) && echo 'Copying the terminal profile com.apple.Terminal.plist..'
+                cp ${PROFILES_DIR}/com.apple.Terminal.plist ~/Library/Preferences/com.apple.Terminal.plist
             fi
         fi
 
@@ -458,7 +483,7 @@ function main() {
     fi
 
     if [[ ${ARG_FORCE} -eq 1 ]]; then
-        ((${ARG_DEBUG})) && echo 'Force copying the profiles.'
+        ((${ARG_DEBUG})) && echo 'Overwriting if any profiles exists with --force option !!!'
         _profiles ${platform} 'Y'
     else
         _profiles ${platform} 'N'
