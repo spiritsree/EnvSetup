@@ -303,25 +303,23 @@ _profiles() {
 
     # Adding custom profiles
     if [[ $platform == 'MacOS' ]]; then
-        cp ${PROFILES_DIR}/.bash_{mac,std}_profile ~/
-        if [[ $(cat ${bash_rc_file} 2> /dev/null | grep '.bash_std_profile' | wc -l) -eq 0 ]]; then
-            ((${ARG_DEBUG})) && echo 'Setting up ~/.bash_std_profile'
-            echo '[ -f ~/.bash_std_profile ] && . ~/.bash_std_profile' >> ${bash_rc_file}
-        fi
-        if [[ $(cat ${bash_rc_file} 2> /dev/null | grep '.bash_mac_profile' | wc -l) -eq 0 ]]; then
-            ((${ARG_DEBUG})) && echo 'Setting up ~/.bash_mac_profile'
-            echo '[ -f ~/.bash_mac_profile ] && . ~/.bash_mac_profile' >> ${bash_rc_file}
-        fi
+        for bash_prof in .bash_{std,mac}_profile; do
+            ((${ARG_DEBUG})) && echo "Copying profile ${bash_prof}"
+            cp ${PROFILES_DIR}/${bash_prof} ~/${bash_prof}
+            if [[ $(cat ${bash_rc_file} 2> /dev/null | grep "${bash_prof}" | wc -l) -eq 0 ]]; then
+                ((${ARG_DEBUG})) && echo "Setting up ${bash_prof}"
+                echo "[ -f ~/${bash_prof} ] && . ~/${bash_prof}" >> ${bash_rc_file}
+            fi
+        done
     else
-        cp ${PROFILES_DIR}/.bash_{nix,std}_profile ~/
-        if [[ $(cat ${bash_rc_file} 2> /dev/null | grep '.bash_std_profile' | wc -l) -eq 0 ]]; then
-            ((${ARG_DEBUG})) && echo 'Setting up ~/.bash_std_profile'
-            echo '[ -f ~/.bash_std_profile ] && . ~/.bash_std_profile' >> ${bash_rc_file}
-        fi
-        if [[ $(cat ${bash_rc_file} 2> /dev/null | grep '.bash_nix_profile' | wc -l) -eq 0 ]]; then
-            ((${ARG_DEBUG})) && echo 'Setting up ~/.bash_nix_profile'
-            echo '[ -f ~/.bash_nix_profile ] && . ~/.bash_nix_profile' >> ${bash_rc_file}
-        fi
+        for bash_prof in .bash_{std,nix}_profile; do
+            ((${ARG_DEBUG})) && echo "Copying profile ${bash_prof}"
+            cp ${PROFILES_DIR}/${bash_prof} ~/${bash_prof}
+            if [[ $(cat ${bash_rc_file} 2> /dev/null | grep "${bash_prof}" | wc -l) -eq 0 ]]; then
+                ((${ARG_DEBUG})) && echo "Setting up ${bash_prof}"
+                echo "[ -f ~/${bash_prof} ] && . ~/${bash_prof}" >> ${bash_rc_file}
+            fi
+        done
     fi
 
     # Calling .bashrc in .bash_profile
