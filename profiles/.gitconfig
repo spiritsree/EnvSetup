@@ -28,12 +28,13 @@
     changes     = diff --name-status -r
     ci          = commit
     cl          = clone
+    clonerepo   = "!f() { git clone https://github.com/$1/$2.git; }; f"
     ; cm: adds all changes including untracked files to the index and commit with the message provided
     cm          = !git add -A && git commit -m
     co          = checkout
     cob         = checkout -b
     d           = diff
-    dc 	        = diff --cached
+    dc          = diff --cached
     diffstat    = diff --stat -r
     done        = "!f() { git branch | grep "$1" | cut -c 3- | grep -v done | xargs -I{} git branch -m {} done-{}; }; f"
     dr          = "!f() { git diff "$1"^.."$1"; }; f"
@@ -62,7 +63,7 @@
     r1          = reset HEAD^
     r2          = reset HEAD^^
     ; ra: git ra upstream org/repo
-    ra          = !f() { git remote add $1 https://github.com/$2.git; }; f"
+    ra          = "!f() { git remote add $1 https://github.com/$2.git; }; f"
     rao         = remote add origin
     rau         = remote add upstream
     rem         = "!git config -l | grep remote.*url | tail -n +2"

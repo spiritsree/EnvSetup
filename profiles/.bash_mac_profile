@@ -111,6 +111,11 @@ pbsed() {
     fi
 }
 
+pbclear() {
+	cat /dev/null | pbcopy
+}
+
+
 # cdf: cd to frontmost dir
 cdf () {
     currFolderPath=$( /usr/bin/osascript <<EOT
