@@ -2,6 +2,8 @@
 
 These are the Key binding used in my TMUX profile.
 
+`C-a` is the prefix key which I am using for ease of use. You need to press `C-a` and then release before pressing the following key to get the action.
+
 | **Key**       | **Action**    |
 | ------------- |:-------------:|
 | **C-a** | send-prefix |
@@ -73,25 +75,25 @@ These are the Key binding used in my TMUX profile.
 | **C-a 8** | select-window 8 |
 | **C-a 9** | select-window 9 |
 | **C-a 0** | select-window 10 |
-| **C-a -** | delete-buffer |
-| **C-a _** | |
+| **C-a \-** | delete-buffer |
+| **C-a \_** | |
 | **C-a =** | choose-buffer |
 | **C-a \`** | |
 | **C-a ~** | show-messages |
-| **C-a !** | break-pane |
+| **C-a \!** | break-pane |
 | **C-a @** | |
-| **C-a #** | list-buffers |
+| **C-a \#** | list-buffers |
 | **C-a $** | rename-session |
 | **C-a %** | split-window vertical |
 | **C-a ^** | |
 | **C-a &** | kill-window with confirm |
 | **C-a \*** | |
-| **C-a (** | switch-client previous |
-| **C-a )** | switch-client next |
-| **C-a [** | copy-mode |
-| **C-a ]** | paste-buffer |
-| **C-a {** | swap-pane up |
-| **C-a }** | swap-pane down |
+| **C-a \(** | switch-client previous |
+| **C-a \)** | switch-client next |
+| **C-a \[** | copy-mode |
+| **C-a \]** | paste-buffer |
+| **C-a \{** | swap-pane up |
+| **C-a \}** | swap-pane down |
 | **C-a \|** | split-window vertical |
 | **C-a ;** | |
 | **C-a :** | command-prompt |
@@ -99,7 +101,7 @@ These are the Key binding used in my TMUX profile.
 | **C-a "** | |
 | **C-a ,** | rename-window |
 | **C-a <** | |
-| **C-a .** | move-window |
+| **C-a \.** | move-window |
 | **C-a >** | |
 | **C-a ?** | list-keys |
 | **C-a Space** | next-layout |
@@ -117,6 +119,6 @@ These are the Key binding used in my TMUX profile.
 | **C-a M-p** | previous-window -a |
 
 
-`C` is the Control key. In MAC it is (^)
+`C` is the Control key. In MAC it is `control`
 
 `M` is the Meta key. In Mac it is the `option` key. I have enabled this in my Terminal profile.
