@@ -1,4 +1,4 @@
-# Envronment Setup
+# Environment Setup
 
 This is what I use to setup my personal work environment.
 
@@ -21,3 +21,7 @@ Examples:
     env_setup.sh -e personal     (for personal env setup)
 
 ```
+
+For details check the [Docs](./Docs)
+
+* [TMUX Cheatsheet](./Docs/tmux_cheatsheet.md)
