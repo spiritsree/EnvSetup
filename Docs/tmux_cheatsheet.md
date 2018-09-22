@@ -5,118 +5,118 @@ These are the Key binding used in my TMUX profile.
 | **Key**       | **Action**    |
 | ------------- |:-------------:|
 | **C-a** | send-prefix |
-| **C-o** | rotate-window |
-| **C-z** | suspend-client |
-| **C-i** | resize-pane up |
-| **C-d** | resize-pane down |
-| **C-x** | resize-pane right |
-| **C-y** | resize-pane left |
-| **a** | |
-| **b** | |
-| **c** | new-window |
-| **d** | detach-client |
-| **e** | |
-| **f** | find-window |
-| **g** | |
-| **h** | split-window horizontal |
-| **i** | select-layout main horizontal |
-| **j** | select-layout main vertical |
-| **k** | |
-| **l** | last-window |
-| **m** | mouse-toggle |
-| **n** | next-window |
-| **o** | select-pane in order |
-| **p** | previous-window |
-| **q** | display-panes |
-| **r** | reload tmux.conf |
-| **s** | choose-tree |
-| **t** | clock-mode |
-| **u** | |
-| **v** | split-window vertical |
-| **w** | choose-window |
-| **x** | kill-pane with confirm |
-| **y** | |
-| **z** | toggle zoom |
-| **A** | |
-| **B** | |
-| **C** | clear-history |
-| **D** | choose-client |
-| **E** | |
-| **F** | |
-| **G** | |
-| **H** | |
-| **I** | select-layout all horizontal |
-| **J** | select-layout all vertical |
-| **K** | |
-| **L** | switch-client last session |
-| **M** | display-message |
-| **N** | |
-| **O** | |
-| **P** | |
-| **Q** | |
-| **R** | refresh-client |
-| **S** | |
-| **T** | select-layout tiled |
-| **U** | |
-| **V** | |
-| **W** | resize-pane right 10 |
-| **X** | resize-pane down 10 |
-| **Y** | resize-pane left 10 |
-| **Z** | resize-pane up 10 |
-| **1** | select-window 1 |
-| **2** | select-window 2 |
-| **3** | select-window 3 |
-| **4** | select-window 4 |
-| **5** | select-window 5 |
-| **6** | select-window 6 |
-| **7** | select-window 7 |
-| **8** | select-window 8 |
-| **9** | select-window 9 |
-| **0** | select-window 10 |
-| **-** | delete-buffer |
-| **_** | |
-| **=** | choose-buffer |
-| **\`** | |
-| **~** | show-messages |
-| **!** | break-pane |
-| **@** | |
-| **#** | list-buffers |
-| **$** | rename-session |
-| **%** | split-window vertical |
-| **^** | |
-| **&** | kill-window with confirm |
-| **\*** | |
-| **(** | switch-client previous |
-| **)** | switch-client next |
-| **[** | copy-mode |
-| **]** | paste-buffer |
-| **{** | swap-pane up |
-| **}** | swap-pane down |
-| **|** | split-window vertical |
-| **;** | |
-| **:** | command-prompt |
-| **'** | select-window by option |
-| **"** | |
-| **,** | rename-window |
-| **<** | |
-| **.** | move-window |
-| **>** | |
-| **?** | list-keys |
-| **/** | |
-| **Space** | next-layout |
-| **Up** | select-pane up |
-| **Left** | select-pane left |
-| **Right** | select-pane right |
-| **Down** | select-pane down |
-| **M-1** | select-layout even-horizontal |
-| **M-2** | select-layout even-vertical |
-| **M-3** | select-layout main-horizontal |
-| **M-4** | select-layout main-vertical |
-| **M-5** | select-layout tiled |
-| **M-n** | next-window -a |
-| **M-o** | rotate-window -D |
-| **M-p** | previous-window -a |
+| **C-a C-o** | rotate-window |
+| **C-a C-z** | suspend-client |
+| **C-a C-i** | resize-pane up |
+| **C-a C-d** | resize-pane down |
+| **C-a C-x** | resize-pane right |
+| **C-a C-y** | resize-pane left |
+| **C-a a** | |
+| **C-a b** | |
+| **C-a c** | new-window |
+| **C-a d** | detach-client |
+| **C-a e** | |
+| **C-a f** | find-window |
+| **C-a g** | |
+| **C-a h** | split-window horizontal |
+| **C-a i** | select-layout main horizontal |
+| **C-a j** | select-layout main vertical |
+| **C-a k** | |
+| **C-a l** | last-window |
+| **C-a m** | mouse-toggle |
+| **C-a n** | next-window |
+| **C-a o** | select-pane in order |
+| **C-a p** | previous-window |
+| **C-a q** | display-panes |
+| **C-a r** | reload tmux.conf |
+| **C-a s** | choose-tree |
+| **C-a t** | clock-mode |
+| **C-a u** | |
+| **C-a v** | split-window vertical |
+| **C-a w** | choose-window |
+| **C-a x** | kill-pane with confirm |
+| **C-a y** | |
+| **C-a z** | toggle zoom |
+| **C-a A** | |
+| **C-a B** | |
+| **C-a C** | clear-history |
+| **C-a D** | choose-client |
+| **C-a E** | |
+| **C-a F** | |
+| **C-a G** | |
+| **C-a H** | |
+| **C-a I** | select-layout all horizontal |
+| **C-a J** | select-layout all vertical |
+| **C-a K** | |
+| **C-a L** | switch-client last session |
+| **C-a M** | display-message |
+| **C-a N** | |
+| **C-a O** | |
+| **C-a P** | |
+| **C-a Q** | |
+| **C-a R** | refresh-client |
+| **C-a S** | |
+| **C-a T** | select-layout tiled |
+| **C-a U** | |
+| **C-a V** | |
+| **C-a W** | resize-pane right 10 |
+| **C-a X** | resize-pane down 10 |
+| **C-a Y** | resize-pane left 10 |
+| **C-a Z** | resize-pane up 10 |
+| **C-a 1** | select-window 1 |
+| **C-a 2** | select-window 2 |
+| **C-a 3** | select-window 3 |
+| **C-a 4** | select-window 4 |
+| **C-a 5** | select-window 5 |
+| **C-a 6** | select-window 6 |
+| **C-a 7** | select-window 7 |
+| **C-a 8** | select-window 8 |
+| **C-a 9** | select-window 9 |
+| **C-a 0** | select-window 10 |
+| **C-a -** | delete-buffer |
+| **C-a _** | |
+| **C-a =** | choose-buffer |
+| **C-a \`** | |
+| **C-a ~** | show-messages |
+| **C-a !** | break-pane |
+| **C-a @** | |
+| **C-a #** | list-buffers |
+| **C-a $** | rename-session |
+| **C-a %** | split-window vertical |
+| **C-a ^** | |
+| **C-a &** | kill-window with confirm |
+| **C-a \*** | |
+| **C-a (** | switch-client previous |
+| **C-a )** | switch-client next |
+| **C-a [** | copy-mode |
+| **C-a ]** | paste-buffer |
+| **C-a {** | swap-pane up |
+| **C-a }** | swap-pane down |
+| **C-a \|** | split-window vertical |
+| **C-a ;** | |
+| **C-a :** | command-prompt |
+| **C-a '** | select-window by option |
+| **C-a "** | |
+| **C-a ,** | rename-window |
+| **C-a <** | |
+| **C-a .** | move-window |
+| **C-a >** | |
+| **C-a ?** | list-keys |
+| **C-a Space** | next-layout |
+| **C-a Up** | select-pane up |
+| **C-a Left** | select-pane left |
+| **C-a Right** | select-pane right |
+| **C-a Down** | select-pane down |
+| **C-a M-1** | select-layout even-horizontal |
+| **C-a M-2** | select-layout even-vertical |
+| **C-a M-3** | select-layout main-horizontal |
+| **C-a M-4** | select-layout main-vertical |
+| **C-a M-5** | select-layout tiled |
+| **C-a M-n** | next-window -a |
+| **C-a M-o** | rotate-window -D |
+| **C-a M-p** | previous-window -a |
 
 
 `C` is the Control key. In MAC it is (^)
+
 `M` is the Meta key. In Mac it is the `option` key. I have enabled this in my Terminal profile.
