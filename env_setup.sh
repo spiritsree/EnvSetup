@@ -12,6 +12,7 @@ PIP_INSTALLS='virtualenv awscli boto3'
 APP_PROFILES='.vimrc .gvimrc .tmux.conf .tmux-osx.conf .gemrc .tigrc .screenrc .irbrc .inputrc .gitconfig .gitignore .yamllint'
 
 PROFILES_DIR="./profiles"
+THEMES_DIR="./themes"
 BIN_DIR="./bin"
 ARG_DEBUG=0
 ARG_FORCE=0
@@ -176,6 +177,7 @@ _baseSetup() {
         _pkgInstall "${platform}" "apt-transport-https" "${pkg_installer}"
         # adding google cloud key to apt
         curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | _runAsRoot apt-key add -
+        _runAsRoot add-apt-repository -y ppa:rmescandon/yq > /dev/null 2>&1
         _runAsRoot touch /etc/apt/sources.list.d/kubernetes.list
         echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" | _runAsRoot tee -a /etc/apt/sources.list.d/kubernetes.list
         _runAsRoot ${pkg_installer} update -y > /dev/null
@@ -372,21 +374,36 @@ _profiles() {
     [[ ! -d ~/.bin ]] && { mkdir ~/.bin; cp ${BIN_DIR}/* ~/.bin/; } || { cp ${BIN_DIR}/* ~/.bin/; }
 
     if [[ $platform == 'MacOS' ]]; then
+        # Create ~/.themes directory
+        if [[ ! -d ~/.themes/iterm2 ]]; then
+            mkdir -p ~/.themes/iterm2
+            ((${ARG_DEBUG})) && echo 'Copying themes to ~/.themes ..'
+            cp ${THEMES_DIR}/* ~/.themes/
+            mv ~/.themes/com.googlecode.iterm2.plist ~/.themes/iterm2/
+        fi
+
         # Copy sublime custom profiles
         if [[ -d ~/Library/Application\ Support/Sublime\ Text\ 3 ]]; then
             if [[ ! -f ~/Library/Application\ Support/Sublime\ Text\ 3/Packages/User/Preferences.sublime-settings ]] || [[ ${force} == 'Y' ]]; then
             	for sprofile in Preferences.sublime-settings Solarized.dark.sublime-color-scheme Solarized.light.sublime-color-scheme; do
             		((${ARG_DEBUG})) && echo "Copying the profile ${sprofile}.."
-                	cp ${PROFILES_DIR}/${sprofile} ~/Library/Application\ Support/Sublime\ Text\ 3/Packages/User/
+                	cp ${THEMES_DIR}/${sprofile} ~/Library/Application\ Support/Sublime\ Text\ 3/Packages/User/
                 done
             fi
         fi
 
-        # Copy Terminal profile
+        # Copy Terminal and iTerm2 profile
         if [[ -d ~/Library/Preferences ]]; then
             if [[ ! -f ~/Library/Preferences/com.apple.Terminal.plist ]] || [[ ${force} == 'Y' ]]; then
                 ((${ARG_DEBUG})) && echo 'Copying the terminal profile com.apple.Terminal.plist..'
-                cp ${PROFILES_DIR}/com.apple.Terminal.plist ~/Library/Preferences/com.apple.Terminal.plist
+                cp ~/.themes/com.apple.Terminal.plist ~/Library/Preferences/com.apple.Terminal.plist
+            fi
+            if [[ ! -f ~/Library/Preferences/com.googlecode.iterm2.plist ]] || [[ ${force} == 'Y' ]]; then
+                # plutil -convert binary1 ~/.themes/iterm2/com.apple.Terminal.plist (to convert to plist binary)
+                # plutil -convert xml1 ~/.themes/iterm2/com.apple.Terminal.plist (to convert to plist xml)
+                ((${ARG_DEBUG})) && echo 'Copying the iTerm2 profile com.googlecode.iterm2.plist..'
+                defaults write com.googlecode.iterm2.plist PrefsCustomFolder -string "~/.themes/iterm2"
+                defaults write com.googlecode.iterm2.plist LoadPrefsFromCustomFolder -bool true
             fi
         fi
 
@@ -494,6 +511,8 @@ main $@
 # Bash colour coding:  https://misc.flogisoft.com/bash/tip_colors_and_formatting
 # jq:  https://github.com/stedolan/jq.git
 # jq: https://jqplay.org/
+# yq: https://yq.readthedocs.io/en/latest/
+# yq: https://github.com/mikefarah/yq
 # kubectl: curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/darwin/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin
 # kops: wget -O kops https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)/kops-linux-amd64 && chmod +x ./kops && sudo mv ./kops /usr/local/bin/
 # zsh: https://ohmyz.sh/
