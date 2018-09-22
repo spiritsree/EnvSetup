@@ -79,7 +79,7 @@ These are the Key binding used in my TMUX profile.
 | **C-a \_** | |
 | **C-a =** | choose-buffer |
 | **C-a \`** | |
-| **C-a ~** | show-messages |
+| **C-a \~** | show-messages |
 | **C-a \!** | break-pane |
 | **C-a @** | |
 | **C-a \#** | list-buffers |
