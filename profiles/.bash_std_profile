@@ -763,15 +763,12 @@ k-ssh() {
     pod=$1
     if [[ " $@ " =~ " -h " ]] || [[ "$@" =~ '--help' ]] || [[ -z "${pod}" ]]; then
         echo
-        echo 'Usage: k-ssh [-h|--help] <pod_name> [namespace]'
+        echo 'Usage: k-ssh [-h|--help] <pod_name> [namespace shell]'
         echo
     else
-        namespace=$2
-        if [[ -n ${namespace} ]]; then
-            kubectl exec -ti ${pod} sh -n ${namespace}
-        else
-            kubectl exec -ti ${pod} sh
-        fi
+        namespace=${2:-default}
+        shell=${3:-bash}
+        kubectl exec -ti ${pod} -n ${namespace} ${shell}
     fi
 }
 
