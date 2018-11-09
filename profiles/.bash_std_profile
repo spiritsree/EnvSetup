@@ -211,6 +211,25 @@ extract () {
     fi
 }
 
+# Alias fof awk with variable column print
+aw() {
+    if [[ $1 =~ ^[0-9]+$ ]]; then
+        awk "{ print \$${1:-1} }"
+    else
+        echo 'Only numbers allowed'
+    fi
+}
+
+# Color diff
+mydiff() {
+    if [[ -z $@ ]] || [[ ! $# -eq 2 ]]; then
+        echo 'Give two files or folders to compare'
+        return 1
+    else
+        diff -bwBr $@ | colordiff
+    fi
+}
+
 # weather
 weather() {
     curl -s 'http://rss.accuweather.com/rss/liveweather_rss.asp?metric=1&locCode=en|au|sydney-ny|2135' | sed -n '/Currently:/ s/.*: \(.*\): \([0-9]*\)\([CF]\).*/\2°\3, \1/p'
@@ -226,6 +245,10 @@ findPid () {
     else
         lsof -t -c "$@"
     fi
+}
+
+tmux-custom() {
+    tmux new-session \; split-window -h \; split-window -v -p 66 \; split-window -v \; select-pane -t 1 \;
 }
 
 # System info
@@ -254,7 +277,7 @@ ii() {
 }
 
 gxpr() {
-    if [[ -z "$@" ]] || [[ "$@" =~ "-h" ]] || [[ "$@" =~ "--help" ]]; then
+    if [[ -z "$@" ]] || [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]]; then
         echo
         echo 'Usage: gxpr <expression>'
         echo
@@ -341,7 +364,7 @@ curlH() {
 
 # Start an HTTP server from a directory, optionally specifying the port
 server() {
-    if [[ "$@" =~ "-h" ]] || [[ "$@" =~ "--help" ]]; then
+    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]]; then
         echo
         echo 'Usage: server [<port>]'
         echo
@@ -369,7 +392,7 @@ ports() {
 #                                      Security Aliases                                             #
 #---------------------------------------------------------------------------------------------------#
 
-getcertnames() {
+certnames() {
     if [ -z "${1}" ]; then
         echo "ERROR: No domain specified."
         return 1
@@ -396,7 +419,7 @@ getcertnames() {
     fi
 }
 
-pubkey() {
+ssh-pubkey() {
     [[ -f ~/.ssh/id_rsa.pub ]] && { cat ~/.ssh/id_rsa.pub; } || { echo 'No RSA Keys'; }
 }
 
@@ -441,7 +464,7 @@ randpass() {
 ssh-key-create() {
     timestamp=`date +%s`
     force=false
-    if [[ $@ =~ '-h' ]] || [[ $@ =~ '--help' ]]; then
+    if [[ " $@ " =~ ' -h ' ]] || [[ $@ =~ '--help' ]]; then
         echo
         echo 'Usage: ssh-key-create [-h|--help] [-e|-email <email>] [-f|--force]'
         echo
@@ -470,10 +493,190 @@ ssh-key-create() {
             eval "${keygenCMD} -t rsa -b 4096 -f ~/.ssh/id_rsa -q -P ''"
             eval "$(ssh-agent -s)"
             ssh-add -k ~/.ssh/id_rsa
-            pubkey
+            ssh-pubkey
         fi
     fi
 }
+
+openssl_genrsa() {
+    out_file='rsa.key'
+    bits=4096
+    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ $(($# % 2)) -gt 0 ]]; then
+        echo
+        echo 'Generate an RSA key..'
+        echo '    Usage: openssl_genrsa [-o out_file] [-b bits]'
+        echo
+    else
+        while [[ -n $1 ]]; do
+            if [[ $1 == '-o' ]]; then
+                shift; out_file=$1; shift
+            elif [[ $1 == '-b' ]]; then
+                shift; bits=$1; shift
+            fi
+        done
+        if [[ ${bits} -lt 1024 ]]; then
+            echo 'Minimum key size is 1024'
+        else
+            openssl genrsa -out ${out_file} ${bits}
+        fi
+    fi
+}
+
+openssl_pubkey() {
+    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
+        echo
+        echo 'Get public key..'
+        echo '    Usage: openssl_pubkey <in_file>'
+        echo
+    else
+        in_file=$1
+        if [[ -f ${in_file} ]]; then
+            openssl rsa -in ${in_file} -pubout
+        else
+            echo 'Key file does not exist !!!'
+        fi
+    fi
+}
+
+openssl_modulus() {
+    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
+        echo
+        echo 'Get modulus..'
+        echo '    Usage: openssl_modulus <in_file>'
+        echo
+    else
+        in_file=$1
+        if [[ -f ${in_file} ]]; then
+            openssl rsa -in ${in_file} -noout -modulus
+        else
+            echo 'Key file does not exist !!!'
+        fi
+    fi
+}
+
+openssl_checkrsa() {
+    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
+        echo
+        echo 'Check RSA key..'
+        echo '    Usage: openssl_checkrsa <in_file>'
+        echo
+    else
+        in_file=$1
+        if [[ -f ${in_file} ]]; then
+            openssl rsa -check -in ${in_file} -noout
+        else
+            echo 'Key file does not exist !!!'
+        fi
+    fi
+}
+
+openssl_checkcsr() {
+    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
+        echo
+        echo 'Check CSR..'
+        echo '    Usage: openssl_checkcsr <in_file>'
+        echo
+    else
+        in_file=$1
+        if [[ -f ${in_file} ]]; then
+            openssl req -in ${in_file} -verify -noout
+        else
+            echo 'Key file does not exist !!!'
+        fi
+    fi
+}
+
+openssl_rsaout() {
+    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
+        echo
+        echo 'Print textual form of RSA..'
+        echo '    Usage: openssl_rsaout <in_file>'
+        echo
+    else
+        in_file=$1
+        if [[ -f ${in_file} ]]; then
+            openssl rsa -in ${in_file} -text -noout
+        else
+            echo 'Key file does not exist !!!'
+        fi
+    fi
+}
+
+openssl_nopass() {
+    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
+        echo
+        echo 'Remove passphrase from RSA..'
+        echo '    Usage: openssl_nopass <in_file>'
+        echo
+    else
+        in_file=$1
+        if [[ -f ${in_file} ]]; then
+            openssl rsa -in ${in_file} -out ${in_file}
+        else
+            echo 'Key file does not exist !!!'
+        fi
+    fi
+}
+
+openssl_sigverify() {
+    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ $(($# % 2)) -gt 0 ]] || [[ $# -lt 4 ]]; then
+        echo
+        echo 'Verify key and certificate matches..'
+        echo '    Usage: openssl_sigverify -c <cert_file> -k <key_file> [-s <csr_file>]'
+        echo
+    else
+        while [[ -n $1 ]]; do
+            if [[ $1 == '-c' ]]; then
+                shift; cert=$1; shift
+            elif [[ $1 == '-k' ]]; then
+                shift; key=$1; shift
+            elif [[ $1 == '-s' ]]; then
+                shift; csr=$1; shift
+            fi
+        done
+        cert_sig=$(openssl x509 -noout -modulus -in ${cert} | openssl sha256)
+        key_sig=$(openssl rsa -noout -modulus -in ${key} | openssl sha256)
+        if [[ -n ${csr} ]]; then
+            csr_sig=$(openssl req -noout -modulus -in ${csr} | openssl sha256)
+        fi
+        if [[ ${cert_sig} == ${key_sig} ]]; then
+            echo "Certificate ${cert} and Key ${key} matches.."
+        fi
+        if [[ -n ${csr} ]]; then
+            if [[ ${cert_sig} == ${csr_sig} ]]; then
+                echo "Certificate ${cert} and CSR ${csr} matches.."
+            fi
+        fi
+    fi
+}
+
+openssl_checkconnect() {
+    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
+        echo
+        echo 'Check TLS connectivity..'
+        echo '    Usage: openssl_checkconnect <server:port>'
+        echo
+    else
+        server=$1
+        openssl s_client -connect ${server} < /dev/null
+    fi
+}
+
+openssl_connecttime() {
+    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
+        echo
+        echo 'Check TLS connectivity..'
+        echo '    Usage: openssl_connecttime <server:port>'
+        echo
+    else
+        server=$1
+        echo '========== without connection re-use ============='
+        openssl s_time -connect ${server} -new
+        echo '========== with connection re-use ============='
+        openssl s_time -connect ${server} -reuse
+    fi
+}
+
 
 #---------------------------------------------------------------------------------------------------#
 #                                      Vagrant Aliases                                              #
@@ -545,14 +748,27 @@ alias kswitch='kubectl config use-context'
 alias knamespace='kubectl config set-context `kubectl config current-context` --namespace'
 alias kcontext='kubectl config current-context'
 k-pods() {
-    if [[ "$@" =~ '-h' ]] || [[ "$@" =~ '--help' ]]; then
+    if [[ " $@ " =~ " -h " ]] || [[ "$@" =~ '--help' ]]; then
         echo
-        echo 'Usage: kpods [node_name]'
+        echo 'Usage: k-pods [node_name]'
         echo
     elif [[ -n $1 ]]; then
         kubectl get pods --all-namespaces -o wide --field-selector=spec.nodeName=$1
     else
         kubectl get pods --all-namespaces -o wide --sort-by=.spec.nodeName
+    fi
+}
+
+k-ssh() {
+    pod=$1
+    if [[ " $@ " =~ " -h " ]] || [[ "$@" =~ '--help' ]] || [[ -z "${pod}" ]]; then
+        echo
+        echo 'Usage: k-ssh [-h|--help] <pod_name> [namespace shell]'
+        echo
+    else
+        namespace=${2:-default}
+        shell=${3:-bash}
+        kubectl exec -ti ${pod} -n ${namespace} ${shell}
     fi
 }
 
@@ -872,7 +1088,7 @@ git-ls-object-refs() {
 }
 
 git-prune-merged-branches() {
-    if [[ "$#" -eq 0 ]] || [[ "$@" =~ "--help" ]] || [[ "$@" =~ "-h" ]]; then
+    if [[ "$#" -eq 0 ]] || [[ "$@" =~ "--help" ]] || [[ " $@ " =~ ' -h ' ]]; then
         echo
         echo 'Usage: git prune-merged-branches [-h|--help] [-fu] [-r <remote>] <merge-branch>'
         echo
@@ -967,7 +1183,7 @@ git-prune-merged-branches() {
 }
 
 git-prune-all() {
-    if [[ "$@" =~ "-h" ]] || [[ "$@" =~ "--help" ]]; then
+    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]]; then
         echo
         echo 'Usage: git-pruneall [<remote>...]'
         echo
@@ -984,7 +1200,7 @@ git-prune-all() {
 }
 
 git-rel() {
-    if [[ "$@" =~ "-h" ]] || [[ "$@" =~ "--help" ]]; then
+    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]]; then
         echo
         echo 'Usage: git-rel [<ref>]'
         echo
@@ -1014,7 +1230,7 @@ git-rel() {
 }
 
 git-up() {
-    if [[ "$@" =~ "-h" ]] || [[ "$@" =~ "--help" ]]; then
+    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]]; then
         echo
         echo 'Usage: git-up [<pull-args>]'
         echo
@@ -1029,7 +1245,7 @@ git-up() {
 }
 
 git-reup() {
-    if [[ "$@" =~ "-h" ]] || [[ "$@" =~ "--help" ]]; then
+    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]]; then
         echo
         echo 'Usage: git-reup [<pull-args>]'
         echo
@@ -1047,7 +1263,7 @@ git-reup() {
 
 git-del-commit() {
     re='^[0-9]$'
-    if [[ "$@" =~ "-h" ]] || [[ "$@" =~ "--help" ]]; then
+    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]]; then
         echo
         echo 'Remove last commits from local repo'
         echo

@@ -19,7 +19,7 @@
     assumed     = "!git ls-files -v | grep ^h | cut -c 3-"
     assumeall   = "!git status -s | awk {'print $2'} | xargs git assume"
     ; bclean: switches to master, runs git up to pull the changes, deletes all branches which are merged to master.
-    bclean      = "!f() { git checkout ${1-master} && git branch --merged ${1-master} | grep -v " ${1-master}$" | xargs git branch -d; }; f"
+    bclean      = "!f() { git checkout ${1-master} && git pull && git branch --merged ${1-master} | grep -v " ${1-master}$" | xargs git branch -d; }; f"
     br          = branch
     bra         = branch -a
     brr         = branch -r
