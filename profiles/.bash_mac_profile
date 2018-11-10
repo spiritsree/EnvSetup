@@ -132,3 +132,23 @@ EOT
     echo "cd to \"$currFolderPath\""
     cd "$currFolderPath"
 }
+
+ssh-env() {
+    if [[ -z "$@" ]]; then
+        echo
+        echo "Setup environment for MacOS's built-in ssh-agent and execute command."
+        echo "Useful when crontab commands require ssh-agent access for authentication."
+        echo
+        echo 'Usage: ssh-env <command>'
+        echo
+    else
+        SSH_AUTH_SOCK=$(
+            `which lsof` -U |
+            grep Listeners    |
+            grep ssh-agent    |
+            awk '{print $8}'
+        )
+        export SSH_AUTH_SOCK
+        exec "$@"
+    fi
+}
