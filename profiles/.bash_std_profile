@@ -392,7 +392,7 @@ ports() {
 #                                      Security Aliases                                             #
 #---------------------------------------------------------------------------------------------------#
 
-certnames() {
+get_ssl_domainnames() {
     if [ -z "${1}" ]; then
         echo "ERROR: No domain specified."
         return 1
@@ -423,23 +423,30 @@ ssh-pubkey() {
     [[ -f ~/.ssh/id_rsa.pub ]] && { cat ~/.ssh/id_rsa.pub; } || { echo 'No RSA Keys'; }
 }
 
-sshenv() {
-    if [[ -z "$@" ]]; then
+ssh-agent-run() {
+    eval `ssh-agent` > /dev/null
+    echo "ssh-agent started with socket $SSH_AUTH_SOCK..."
+    ssh-key-create
+    ssh-add 2> /dev/null
+    ssh-add -l
+}
+
+ssh-key-match() {
+    if [[ -z "$@" ]] || [[ $# -ne 2 ]]; then
         echo
-        echo "Setup environment for MacOS's built-in ssh-agent and execute command."
-        echo "Useful when crontab commands require ssh-agent access for authentication."
+        echo "Check if ssh private key matches with public key..."
         echo
-        echo 'Usage: sshenv <command>'
+        echo 'Usage: ssh-key-match <key1> <key2>'
         echo
     else
-        SSH_AUTH_SOCK=$(
-            /usr/sbin/lsof -U |
-            grep Listeners    |
-            grep ssh-agent    |
-            awk '{print $8}'
-        )
-        export SSH_AUTH_SOCK
-        exec "$@"
+        key1=$1
+        key2=$2
+        diff <( ssh-keygen -y -e -f "${key1}" ) <( ssh-keygen -y -e -f "${key2}" ) > /dev/null
+        if [[ $? -eq 0 ]]; then
+            echo "${key1} and ${key2} match..."
+        else
+            echo "${key1} and ${key2} differ..."
+        fi
     fi
 }
 
@@ -525,8 +532,8 @@ openssl_genrsa() {
 openssl_pubkey() {
     if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
         echo
-        echo 'Get public key..'
-        echo '    Usage: openssl_pubkey <in_file>'
+        echo 'Get public key from rsa key..'
+        echo '    Usage: openssl_pubkey <rsa_key_file>'
         echo
     else
         in_file=$1
@@ -541,8 +548,8 @@ openssl_pubkey() {
 openssl_modulus() {
     if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
         echo
-        echo 'Get modulus..'
-        echo '    Usage: openssl_modulus <in_file>'
+        echo 'Get modulus from rsa key..'
+        echo '    Usage: openssl_modulus <rsa_key_file>'
         echo
     else
         in_file=$1
@@ -558,7 +565,7 @@ openssl_checkrsa() {
     if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
         echo
         echo 'Check RSA key..'
-        echo '    Usage: openssl_checkrsa <in_file>'
+        echo '    Usage: openssl_checkrsa <rsa_key_file>'
         echo
     else
         in_file=$1
@@ -574,7 +581,7 @@ openssl_checkcsr() {
     if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
         echo
         echo 'Check CSR..'
-        echo '    Usage: openssl_checkcsr <in_file>'
+        echo '    Usage: openssl_checkcsr <csr_file>'
         echo
     else
         in_file=$1
@@ -590,7 +597,7 @@ openssl_rsaout() {
     if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
         echo
         echo 'Print textual form of RSA..'
-        echo '    Usage: openssl_rsaout <in_file>'
+        echo '    Usage: openssl_rsaout <rsa_key_file>'
         echo
     else
         in_file=$1
@@ -606,7 +613,7 @@ openssl_nopass() {
     if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
         echo
         echo 'Remove passphrase from RSA..'
-        echo '    Usage: openssl_nopass <in_file>'
+        echo '    Usage: openssl_nopass <rsa_key_file>'
         echo
     else
         in_file=$1
@@ -662,6 +669,18 @@ openssl_checkconnect() {
     fi
 }
 
+openssl_certexpiry() {
+    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
+        echo
+        echo 'Check certificate expiry..'
+        echo '    Usage: openssl_certexpiry <server:port>'
+        echo
+    else
+        server=$1
+        echo | openssl s_client  -connect ${server} 2>/dev/null | openssl x509 -noout -dates -fingerprint
+    fi
+}
+
 openssl_connecttime() {
     if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
         echo
@@ -677,6 +696,49 @@ openssl_connecttime() {
     fi
 }
 
+openssl_get_server_cert() {
+    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
+        echo
+        echo 'Get SSL certificate from server..'
+        echo '    Usage: openssl_get_server_cert <server:port>'
+        echo
+    else
+        server=$1
+        openssl s_client -connect ${server} 2>&1 < /dev/null | sed -n '/-----BEGIN/,/-----END/p'
+    fi
+}
+
+openssl_get_server_cacert() {
+    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
+        echo
+        echo 'Get SSL CA certificate from server..'
+        echo '    Usage: openssl_get_server_cacert <server:port>'
+        echo
+    else
+        server=$1
+        domain=$(echo ${server} | awk -F':' '{ print $1 }')
+        port=$(echo ${server} | awk -F':' '{ print $2 }')
+        openssl s_client -showcerts -host ${domain} -port ${port} < /dev/null 2>&1 | sed -n '/-----BEGIN/,/-----END/p'
+    fi
+}
+
+openssl_get_ocsp_response() {
+    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
+        echo
+        echo 'Get OCSP response of SSL certificate from server..'
+        echo '    Usage: openssl_get_ocsp_response <server:port>'
+        echo
+    else
+        server=$1
+        cert_file="/tmp/cert.pem"
+        chain_file="/tmp/chain.pem"
+        openssl_get_server_cert ${server} > ${cert_file}
+        ocsp_uri=$(openssl x509 -in ${cert_file} -noout -ocsp_uri)
+        openssl_get_server_cacert ${server} > ${chain_file}
+        openssl ocsp -issuer ${chain_file} -VAfile ${chain_file} -cert ${cert_file} -text -url ${ocsp_uri}
+        rm -f ${cert_file} ${chain_file}
+    fi
+}
 
 #---------------------------------------------------------------------------------------------------#
 #                                      Vagrant Aliases                                              #
