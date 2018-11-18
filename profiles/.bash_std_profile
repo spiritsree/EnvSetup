@@ -916,7 +916,7 @@ k-ssh() {
 }
 
 k-nodes() {
-
+    kubectl get nodes
 }
 
 k-drain-watch() {
