@@ -932,7 +932,7 @@ k-ssh() {
 }
 
 k-nodes() {
-    kubectl get nodes
+    kubectl get nodes -L beta.kubernetes.io/instance-type -L failure-domain.beta.kubernetes.io/zone --sort-by=.metadata.labels."beta\.kubernetes\.io/instance-type" --sort-by=.metadata.labels."failure-domain\.beta\.kubernetes\.io/zone" --sort-by=.metadata.labels."kubernetes\.io/role"
 }
 
 k-drain-watch() {
