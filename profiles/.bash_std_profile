@@ -272,10 +272,22 @@ isPositiveInteger() {
     echo 'false' && return 1
 }
 
+# removeNewline "<string>"
+removeNewline() {
+    local raw_string="$@"
+    if [ $(uname) == 'Darwin' ]; then
+        echo "${raw_string}" | tr -d '\r' | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n//g'
+    else
+        echo "${raw_string}" | tr -d '\r' | sed ':a;$!{N;s/\n/ /;ba;}'
+    fi
+}
+
 # printTable "<delimiter>" "<content>"
 printTable() {
     local -r delimiter="${1}"
     local -r tableData="$(removeEmptyLines "${2}")"
+    local colSize=$(tput cols)
+    local colLimit=$((${colSize} / 2))
     if [[ "${delimiter}" != '' && "$(isEmptyString "${tableData}")" = 'false' ]]; then
         local -r numberOfLines="$(wc -l <<< "${tableData}")"
 
@@ -284,6 +296,7 @@ printTable() {
             local i=1
             for ((i = 1; i <= "${numberOfLines}"; i = i + 1)); do
                 local line=''
+                local tline=''
                 line="$(sed "${i}q;d" <<< "${tableData}")"
                 local numberOfColumns='0'
                 numberOfColumns="$(awk -F "${delimiter}" '{print NF}' <<< "${line}")"
@@ -295,7 +308,8 @@ printTable() {
                 table="${table}\n"
                 local j=1
                 for ((j = 1; j <= "${numberOfColumns}"; j = j + 1)); do
-                    table="${table}$(printf '#| %s' "$(cut -d "${delimiter}" -f "${j}" <<< "${line}")")"
+                    tline=$(echo "${line}" | cut -c-${colLimit})
+                    table="${table}$(printf '#| %s' "$(cut -d "${delimiter}" -f "${j}" <<< "${tline}")")"
                 done
                 table="${table}#|\n"
                 # Add Line Delimiter
@@ -834,7 +848,9 @@ vagrant_boxes() {
         echo '  e.g: vagrant_boxes ubuntu'
         echo
     else
-        printTable ',' "$(echo 'Tag,Description'; curl "https://app.vagrantup.com/api/v1/search?q=$1&limit=20&provider=virtualbox&sort=updated" 2> /dev/null | jq -r '.boxes[] | .tag  + "," + .short_description')"
+        local result=$(curl "https://app.vagrantup.com/api/v1/search?q=$1&limit=20&provider=virtualbox&sort=updated" 2> /dev/null | jq -r '.boxes[] | .tag  + "<" + .short_description + ">"')
+        result=$(removeNewline "${result}" | tr -d '#' | tr -d ',' | tr '<' ',' | tr '>' '\n')
+        printTable ',' "$(echo 'Tag,Description'; echo "${result}")"
     fi
 }
 
