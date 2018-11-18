@@ -165,7 +165,9 @@ if [[ -n $(which yamllint) ]] && [[ -f ~/.yamllint ]]; then
     alias yamllint="yamllint -c ~/.yamllint"
 fi
 
-alias fit="cut -c-$(tput cols)"
+fit() {
+    cut -c-`eval "tput cols"`;
+}
 
 islogin() {
     if [[ "$0" == '-bash' ]] ;then
@@ -227,6 +229,98 @@ mydiff() {
         return 1
     else
         diff -bwBr $@ | colordiff
+    fi
+}
+
+# removeEmptyLines "<Content>"
+removeEmptyLines() {
+    local -r content="${1}"
+    echo -e "${content}" | sed '/^\s*$/d'
+}
+
+# isEmptyString "<content>"
+isEmptyString() {
+    local -r string="${1}"
+    if [[ "$(trimString "${string}")" = '' ]]; then
+        echo 'true' && return 0
+    fi
+    echo 'false' && return 1
+}
+
+# trimString "<content>"
+trimString() {
+    local -r string="${1}"
+    sed 's,^[[:blank:]]*,,' <<< "${string}" | sed 's,[[:blank:]]*$,,'
+}
+
+# repeatString "<string>" "<count>"
+repeatString() {
+    local -r string="${1}"
+    local -r numberToRepeat="${2}"
+    if [[ "${string}" != '' && "$(isPositiveInteger "${numberToRepeat}")" = 'true' ]]; then
+        local -r result="$(printf "%${numberToRepeat}s")"
+        echo -e "${result// /${string}}"
+    fi
+}
+
+# isPositiveInteger "<string>"
+isPositiveInteger() {
+    local -r string="${1}"
+    if [[ "${string}" =~ ^[1-9][0-9]*$ ]]; then
+        echo 'true' && return 0
+    fi
+    echo 'false' && return 1
+}
+
+# removeNewline "<string>"
+removeNewline() {
+    local raw_string="$@"
+    if [ $(uname) == 'Darwin' ]; then
+        echo "${raw_string}" | tr -d '\r' | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n//g'
+    else
+        echo "${raw_string}" | tr -d '\r' | sed ':a;$!{N;s/\n/ /;ba;}'
+    fi
+}
+
+# printTable "<delimiter>" "<content>"
+printTable() {
+    local -r delimiter="${1}"
+    local -r tableData="$(removeEmptyLines "${2}")"
+    local colSize=$(tput cols)
+    local colLimit=$((${colSize} / 2))
+    if [[ "${delimiter}" != '' && "$(isEmptyString "${tableData}")" = 'false' ]]; then
+        local -r numberOfLines="$(wc -l <<< "${tableData}")"
+
+        if [[ "${numberOfLines}" -gt '0' ]]; then
+            local table=''
+            local i=1
+            for ((i = 1; i <= "${numberOfLines}"; i = i + 1)); do
+                local line=''
+                local tline=''
+                line="$(sed "${i}q;d" <<< "${tableData}")"
+                local numberOfColumns='0'
+                numberOfColumns="$(awk -F "${delimiter}" '{print NF}' <<< "${line}")"
+                # Add Line Delimiter
+                if [[ "${i}" -eq '1' ]]; then
+                    table="${table}$(printf '%s#+' "$(repeatString '#+' "${numberOfColumns}")")"
+                fi
+                # Add Header Or Body
+                table="${table}\n"
+                local j=1
+                for ((j = 1; j <= "${numberOfColumns}"; j = j + 1)); do
+                    tline=$(echo "${line}" | cut -c-${colLimit})
+                    table="${table}$(printf '#| %s' "$(cut -d "${delimiter}" -f "${j}" <<< "${tline}")")"
+                done
+                table="${table}#|\n"
+                # Add Line Delimiter
+                if [[ "${i}" -eq '1' ]] || [[ "${numberOfLines}" -gt '1' && "${i}" -eq "${numberOfLines}" ]]; then
+                    table="${table}$(printf '%s#+' "$(repeatString '#+' "${numberOfColumns}")")"
+                fi
+            done
+            if [[ "$(isEmptyString "${table}")" = 'false' ]]; then
+                echo -e "${table}" | column -s '#' -t | awk '/^\+/{gsub(" ", "-", $0)}1'
+            fi
+        fi
     fi
 }
 
@@ -754,7 +848,9 @@ vagrant_boxes() {
         echo '  e.g: vagrant_boxes ubuntu'
         echo
     else
-        curl "https://app.vagrantup.com/api/v1/search?q=$1&limit=20&provider=virtualbox&sort=updated" 2> /dev/null | jq -r '.boxes[] | { tag, short_description }'
+        local result=$(curl "https://app.vagrantup.com/api/v1/search?q=$1&limit=20&provider=virtualbox&sort=updated" 2> /dev/null | jq -r '.boxes[] | .tag  + "<" + .short_description + ">"')
+        result=$(removeNewline "${result}" | tr -d '#' | tr -d ',' | tr '<' ',' | tr '>' '\n')
+        printTable ',' "$(echo 'Tag,Description'; echo "${result}")"
     fi
 }
 
@@ -809,6 +905,7 @@ k() {
 alias kswitch='kubectl config use-context'
 alias knamespace='kubectl config set-context `kubectl config current-context` --namespace'
 alias kcontext='kubectl config current-context'
+
 k-pods() {
     if [[ " $@ " =~ " -h " ]] || [[ "$@" =~ '--help' ]]; then
         echo
@@ -832,6 +929,23 @@ k-ssh() {
         shell=${3:-bash}
         kubectl exec -ti ${pod} -n ${namespace} ${shell}
     fi
+}
+
+k-nodes() {
+    kubectl get nodes -L beta.kubernetes.io/instance-type -L failure-domain.beta.kubernetes.io/zone --sort-by=.metadata.labels."beta\.kubernetes\.io/instance-type" --sort-by=.metadata.labels."failure-domain\.beta\.kubernetes\.io/zone" --sort-by=.metadata.labels."kubernetes\.io/role"
+}
+
+k-drain-watch() {
+    if [[ -z $1 ]]; then
+        echo "Please provide a node name..."
+        return 1
+    fi
+    NODE=$1
+    watch -n 1 "kubectl get pods --all-namespaces -o wide --field-selector=spec.nodeName=${NODE} | cut -c-`eval 'tput cols'`"
+}
+
+k-pod-watch() {
+    watch -n 1 "kubectl get pods --all-namespaces -owide --sort-by=.status.startTime | awk '\$6~/^[0-9]{1,2}s$|^[0-4]{0,1}m$/' | awk '{a[i++]=\$0} END {for (j=i-1; j>=0;) print a[j--] }' | cut -c-`eval 'tput cols'`"
 }
 
 #---------------------------------------------------------------------------------------------------#
@@ -1344,4 +1458,47 @@ git-del-commit() {
 
 git-clean-branch() {
     git bclean
+}
+
+git-move-commit() {
+    re='^[0-9a-f]{7,}$'
+    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ $# -ne 3 ]]; then
+        echo
+        echo 'Move commits to a different branch'
+        echo 'If only one commit, first and last sha will be same'
+        echo '************ USE WITH CAUTION ************'
+        echo '     Usage: git-move-commit [-h|--help] <first_commit_sha> <last_commit_sha> <destination_branch>'
+        echo
+    else
+        first_sha=$1
+        last_sha=$2
+        dest_branch=$3
+        temp_branch=$(date +%s)
+        source_branch=$(git branch 2> /dev/null | sed -e "/^[^*]/d" -e "s/* \(.*\)/\1/")
+        if [[ ! ${first_sha} =~ $re ]]; then
+            echo "${first_sha} doesn't look like a sha..."
+            return 1
+        elif [[ ! ${last_sha} =~ $re ]]; then
+            echo "${last_sha} doesn't look like a sha..."
+            return 1
+        elif [[ $(git branch | grep ${dest_branch} | wc -l) -ne 1 ]]; then
+            echo "branch ${dest_branch} does not exist..."
+            return 1
+        elif [[ $(git log --oneline --max-count=15 | grep ${first_sha} | wc -l) -lt 1 ]]; then
+            echo "Cannot find ${first_sha} in current branch..."
+            return 1
+        elif [[ $(git log --oneline --max-count=15 | grep ${last_sha} | wc -l) -lt 1 ]]; then
+            echo "Cannot find ${last_sha} in current branch..."
+            return 1
+        elif [[ "${source_branch}" == "${dest_branch}" ]]; then
+            echo "Source: ${source_branch} and Destination: ${dest_branch} are same..."
+            return 1
+        fi
+        git branch ${temp_branch} ${last_sha} && \
+        git rebase -p --onto ${dest_branch} ${first_sha}^ ${temp_branch} && \
+        git checkout ${dest_branch} && \
+        git reset --hard ${temp_branch} && \
+        git branch -d ${temp_branch} && \
+        git rebase -p --onto ${first_sha}^ ${last_sha} ${source_branch}
+    fi
 }
