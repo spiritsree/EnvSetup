@@ -152,3 +152,41 @@ ssh-env() {
         exec "$@"
     fi
 }
+
+pyspark-install() {
+    # Tested on Apache Spark 2.1.0, Python 2.7.13 and Java 1.8.0_112
+
+    brew update > /dev/null 2>&1
+
+    # For Apache Spark
+    if which java > /dev/null; then export JAVA_HOME=$(/usr/libexec/java_home); fi
+
+    echo "Installing scala..."
+    brew install scala > /dev/null 2>&1
+    echo "Installing java8..."
+    brew cask install homebrew/cask-versions/java8 > /dev/null 2>&1
+    echo "Installing Apache Spark..."
+    brew install apache-spark > /dev/null 2>&1
+
+    spark_version=$(brew info apache-spark | sed 's|.*stable \([0-9\.]*\).*|\1|' | head -1)
+    # For a ipython notebook and pyspark integration
+    if which pyspark > /dev/null; then
+        export SPARK_HOME="/usr/local/Cellar/apache-spark/${spark_version}/libexec"
+        export PYTHONPATH=$SPARK_HOME/python:$SPARK_HOME/python/build:$PYTHONPATH
+        export PYTHONPATH=$SPARK_HOME/python/lib/pyspark.zip:$SPARK_HOME/python/lib/py4j-0.10.7-src.zip:$PYTHONPATH
+    fi
+}
+
+pyspark-cleanup() {
+    echo "Removing scala..."
+    brew uninstall scala > /dev/null 2>&1
+    echo "Removing Apache Spark.."
+    brew uninstall apache-spark > /dev/null 2>&1
+    echo "Removing Java8..."
+    brew cask uninstall homebrew/cask-versions/java8 > /dev/null 2>&1
+}
+
+kubeval-install() {
+    brew tap garethr/kubeval > /dev/null 2>&1
+    brew install kubeval > /dev/null 2>&1
+}
