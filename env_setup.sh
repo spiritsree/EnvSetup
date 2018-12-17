@@ -63,7 +63,7 @@ _getOptions() {
                         ;;
                     env)
                         ARG_ENV="${!OPTIND}"; OPTIND=$(( OPTIND + 1 ))
-                        if [ -z "${ARG_ENV}" ]; then
+                        if [[ -z "${ARG_ENV}" ]]; then
                             _usage "Need to specify an environment for --env"
                             exit 1
                         fi
@@ -76,7 +76,7 @@ _getOptions() {
                         ARG_FORCE=1
                         ;;
                     *)
-                        if [ "$OPTERR" = 1 ] && [ "${optspec:0:1}" != ":" ]; then
+                        if [[ "$OPTERR" = 1 ]] && [[ "${optspec:0:1}" != ":" ]]; then
                             _usage "Unknown option --${OPTARG}"
                             exit 1
                         else
@@ -114,7 +114,7 @@ _getOptions() {
 _getPlatform() {
     local platform=''
 
-    if [ "$(uname)" == 'Darwin' ]; then
+    if [[ "$(uname)" == 'Darwin' ]]; then
         platform='MacOS'
     elif [[ "$(uname)" == 'Linux' ]] && [[ -f '/etc/lsb-release' ]]; then
         platform='Ubuntu'
@@ -235,7 +235,7 @@ _pkgInstall() {
     local platform=$1
     local package=$2
     local pkg_installer=$3
-    if [[ ${platform} == 'MacOS' ]]; then
+    if [[ "${platform}" == 'MacOS' ]]; then
         ${pkg_installer} list "${package}" > /dev/null 2>&1
         brew_present=$?
        ${pkg_installer} cask list "${package}" > /dev/null 2>&1
@@ -269,7 +269,7 @@ _pipInstall() {
     local pip_bin
     pip_bin=$(command -v pip3)
     if [[ $(pip3 list 2> /dev/null | command -p grep -ce "^${package}") -eq 0 ]]; then
-        if [[ ${platform} == 'MacOS' ]]; then
+        if [[ "${platform}" == 'MacOS' ]]; then
             ((ARG_DEBUG)) && echo "Installing ${package}..."
             ${pip_bin} install "${package}"
         else
@@ -317,7 +317,7 @@ _profiles() {
     fi
 
     # Adding custom profiles
-    if [[ $platform == 'MacOS' ]]; then
+    if [[ "${platform}" == 'MacOS' ]]; then
         for bash_prof in .bash_{std,mac}_profile; do
             ((ARG_DEBUG)) && echo "Copying profile ${bash_prof}"
             cp ${PROFILES_DIR}/${bash_prof} ~/${bash_prof}
@@ -400,7 +400,7 @@ _profiles() {
         cp ${BIN_DIR}/* ~/.bin/
     fi
 
-    if [[ $platform == 'MacOS' ]]; then
+    if [[ "${platform}" == 'MacOS' ]]; then
         # Create ~/.themes directory
         if [[ ! -d ~/.themes/iterm2 ]]; then
             mkdir -p ~/.themes/iterm2
@@ -411,7 +411,7 @@ _profiles() {
 
         # Copy sublime custom profiles
         if [[ -d ~/Library/Application\ Support/Sublime\ Text\ 3 ]]; then
-            if [[ ! -f ~/Library/Application\ Support/Sublime\ Text\ 3/Packages/User/Preferences.sublime-settings ]] || [[ ${force} == 'Y' ]]; then
+            if [[ ! -f ~/Library/Application\ Support/Sublime\ Text\ 3/Packages/User/Preferences.sublime-settings ]] || [[ "${force}" == 'Y' ]]; then
             	for sprofile in Preferences.sublime-settings Solarized.dark.sublime-color-scheme Solarized.light.sublime-color-scheme; do
             		((ARG_DEBUG)) && echo "Copying the profile ${sprofile}.."
                 	cp ${THEMES_DIR}/${sprofile} ~/Library/Application\ Support/Sublime\ Text\ 3/Packages/User/
@@ -421,11 +421,11 @@ _profiles() {
 
         # Copy Terminal and iTerm2 profile
         if [[ -d ~/Library/Preferences ]]; then
-            if [[ ! -f ~/Library/Preferences/com.apple.Terminal.plist ]] || [[ ${force} == 'Y' ]]; then
+            if [[ ! -f ~/Library/Preferences/com.apple.Terminal.plist ]] || [[ "${force}" == 'Y' ]]; then
                 ((ARG_DEBUG)) && echo 'Copying the terminal profile com.apple.Terminal.plist..'
                 cp ~/.themes/com.apple.Terminal.plist ~/Library/Preferences/com.apple.Terminal.plist
             fi
-            if [[ ! -f ~/Library/Preferences/com.googlecode.iterm2.plist ]] || [[ ${force} == 'Y' ]]; then
+            if [[ ! -f ~/Library/Preferences/com.googlecode.iterm2.plist ]] || [[ "${force}" == 'Y' ]]; then
                 # plutil -convert binary1 ~/.themes/iterm2/com.apple.Terminal.plist (to convert to plist binary)
                 # plutil -convert xml1 ~/.themes/iterm2/com.apple.Terminal.plist (to convert to plist xml)
                 ((ARG_DEBUG)) && echo 'Copying the iTerm2 profile com.googlecode.iterm2.plist..'
@@ -523,7 +523,7 @@ function main() {
         _pipInstall "${platform}" "${pip_package}" > /dev/null
     done
 
-    if [[ ${platform} == 'MacOS' ]]; then
+    if [[ "${platform}" == 'MacOS' ]]; then
         pkg='Komodo-Edit'
         regex=${pkg//-/ }
         if [[ $(pkgutil --pkgs | grep -ci "${pkg}") -eq 0 ]] && [[ $(find -E /Applications -maxdepth 1 -regex ".*${regex}.*" | wc -l) -eq 0 ]]; then
