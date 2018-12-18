@@ -183,11 +183,18 @@ _baseSetup() {
         pkg_installer=$(command -v apt-get)
         _pkgInstall "${platform}" "apt-transport-https" "${pkg_installer}"
         # adding google cloud key to apt
-        curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | _runAsRoot apt-key add -
+        google_key=$(mktemp /tmp/google_key.XXXXXXXXXX)
+        curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg -o "${google_key}" > /dev/null 2>&1
+        # shellcheck disable=SC2034
+        apt_status=$(_runAsRoot apt-key add "${google_key}" 2> /dev/null)
+        unlink "${google_key}"
         _runAsRoot add-apt-repository -y ppa:rmescandon/yq > /dev/null 2>&1
         _runAsRoot touch /etc/apt/sources.list.d/kubernetes.list
-        echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" | _runAsRoot tee -a /etc/apt/sources.list.d/kubernetes.list
-        _runAsRoot "${pkg_installer}" update -y > /dev/null
+        # shellcheck disable=SC2034
+        tee_out=$(_runAsRoot echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' | tee -a /etc/apt/sources.list.d/kubernetes.list)
+        _runAsRoot "${pkg_installer}" update -y > /dev/null 2>&1
+        # python3-distutils required by get-pip.py
+        _runAsRoot "${pkg_installer}" install python3-distutils -y > /dev/null 2>&1
         echo "${pkg_installer}"
     elif [[ "${platform}" == 'Linux' ]]; then
         pkg_installer=$(command -v yum)
@@ -200,7 +207,7 @@ gpgcheck=1
 repo_gpgcheck=1
 gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
 EOF
-        _runAsRoot "${pkg_installer}" update -y > /dev/null
+        _runAsRoot "${pkg_installer}" update -y > /dev/null 2>&1
         _pkgInstall "${platform}" "vim-enhanced" "${pkg_installer}"
         _pkgInstall "${platform}" "epel-release" "${pkg_installer}"
         echo "${pkg_installer}"
@@ -242,7 +249,7 @@ _pkgInstall() {
         brew_cask_present=$?
         (( brew_present && brew_cask_present )) && { ((ARG_DEBUG)) && echo "Installing ${package}..."; ${pkg_installer} install "${package}" > /dev/null 2>&1; initial_status=$?; (( initial_status )) && ${pkg_installer} cask install "${package}" > /dev/null 2>&1; }
     elif [[ "${platform}" == 'Ubuntu' ]]; then
-        dpkg -s "${package}" >/dev/null 2>&1 || { ((ARG_DEBUG)) && echo "Installing ${package}..."; _runAsRoot "${pkg_installer}" install "${package}" -y > /dev/null; }
+        dpkg -s "${package}" >/dev/null 2>&1 || { ((ARG_DEBUG)) && echo "Installing ${package}..."; _runAsRoot "${pkg_installer}" install "${package}" -y > /dev/null 2>&1; }
     elif [[ "${platform}" == 'Linux' ]]; then
         if ! rpm -qa | grep -qw "${package}"; then
             ((ARG_DEBUG)) && echo "Installing ${package}..."
@@ -305,7 +312,7 @@ _profiles() {
     ((ARG_DEBUG)) && echo 'Copying the env profiles.'
 
     # Adding system bashrc
-    if [[ $(command -p grep -v '^#' ${bash_rc_file} 2> /dev/null | command -p grep -c '/etc/bashrc') -eq 0 ]]; then
+    if [[ $(command -p grep -v '^#' ${bash_rc_file} 2> /dev/null | command -p grep -c '/etc/bashrc') -eq 0 ]] && [[ -f /etc/bashrc ]]; then
         ((ARG_DEBUG)) && echo 'Setting up /etc/bashrc'
         [[ -f /etc/bashrc ]] && echo '[ -r /etc/bashrc ] && . /etc/bashrc' >> ${bash_rc_file}
     fi
@@ -347,10 +354,10 @@ _profiles() {
         # shellcheck disable=SC2088
         IFS=" " read -ra bash_rc_pos <<< "$(command -p grep -n '~/.bashrc' ${bash_profile_file} | sed -e 's/^[ \t]*//' | command -p grep -Ev '^\d+:([[:space:]]+)?#' | awk -F':' '{ print $1 }' | tr '\n' ' ')"
         bash_rc_pos_count=${#bash_rc_pos[@]}
-        ((ARG_DEBUG)) && echo "Rearranging position of ~/.bashrc profile in ${bash_profile_file}"
         if [[ ${bash_rc_pos[$((bash_rc_pos_count - 1))]} -eq ${file_length} ]]; then
             unset bash_rc_pos[$((bash_rc_pos_count - 1))]
         else
+            ((ARG_DEBUG)) && echo "Rearranging position of ~/.bashrc profile in ${bash_profile_file}"
             echo '[ -f ~/.bashrc ] && . ~/.bashrc' >> ${bash_profile_file}
         fi
         for pos in "${bash_rc_pos[@]}"; do
@@ -460,9 +467,9 @@ _pkgInstallProcess() {
                 ((ARG_DEBUG)) && echo 'Installing pip...'
                 curl -O https://bootstrap.pypa.io/get-pip.py 2> /dev/null
                 if [[ "${platform}" == 'MacOS' ]]; then
-                    ${python_bin} get-pip.py
+                    ${python_bin} get-pip.py > /dev/null 2>&1
                 else
-                    _runAsRoot "${python3_bin}" get-pip.py
+                    _runAsRoot "${python3_bin}" get-pip.py > /dev/null 2>&1
                 fi
             fi
         elif [[ "${package}" =~ helm$ ]] && [[ "${platform}" != 'MacOS' ]]; then
