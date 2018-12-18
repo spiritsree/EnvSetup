@@ -148,7 +148,7 @@ _capitalize() {
 _ask() {
     local in="$*"
     local out=''
-    echo -n "${in}? "
+    echo -en "${RED}${in}? ${NC}"
     read -r val
     out=$(_capitalize "${val}")
     if [[ "${out}" == 'Y' ]] || [[ "${out}" == 'YES' ]]; then
