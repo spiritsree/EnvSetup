@@ -483,7 +483,7 @@ _pkgInstallProcess() {
         elif [[ "${package}" =~ helm$ ]] && [[ "${platform}" != 'MacOS' ]]; then
             ((ARG_DEBUG)) && echo 'Installing helm...'
             curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get -o get_helm.sh 2> /dev/null
-            bash get_helm.sh
+            bash get_helm.sh > /dev/null 2>&1
         elif [[ "${package}" == "kubernetes-cli" ]] && [[ "${platform}" != 'MacOS' ]]; then
             _pkgInstall "${platform}" "kubectl" "${pkg_installer}"
         elif [[ "${package}" == 'kops' ]] && [[ "${platform}" != 'MacOS' ]]; then
@@ -495,7 +495,7 @@ _pkgInstallProcess() {
                 _runAsRoot mv ./kops /usr/local/bin/
             else
                 ((ARG_DEBUG)) && echo 'Could not find the kops version...'
-                ((ARG_DEBUG)) && echo 'Check "curl -I https://api.github.com" to see if you have ran out of free api calls.'
+                ((ARG_DEBUG)) && echo "Check ${RED}"curl -I https://api.github.com"${NC} to see if you have ran out of free api calls."
             fi
         else
             _pkgInstall "${platform}" "${package}" "${pkg_installer}"
