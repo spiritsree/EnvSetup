@@ -324,7 +324,7 @@ _profiles() {
 
     # A custom profile where you can add your own aliases or functions
     if [[ $(command -p grep -c '.bash_office_profile' ${bash_rc_file} 2> /dev/null) -eq 0 ]]; then
-        ((ARG_DEBUG)) && echo "Setting up ~/.bash_office_profile - ${RED}You can add your custom stuff here.${NC}"
+        ((ARG_DEBUG)) && echo -e "Setting up ~/.bash_office_profile - ${RED}You can add your custom stuff here.${NC}"
         echo '[ -f ~/.bash_office_profile ] && . ~/.bash_office_profile' >> ${bash_rc_file}
     fi
 
@@ -495,7 +495,7 @@ _pkgInstallProcess() {
                 _runAsRoot mv ./kops /usr/local/bin/
             else
                 ((ARG_DEBUG)) && echo 'Could not find the kops version...'
-                ((ARG_DEBUG)) && echo "Check ${RED}\"curl -I https://api.github.com\"${NC} to see if you have ran out of free api calls."
+                ((ARG_DEBUG)) && echo -e "Check ${RED}\"curl -I https://api.github.com\"${NC} to see if you have ran out of free api calls."
             fi
         else
             _pkgInstall "${platform}" "${package}" "${pkg_installer}"
