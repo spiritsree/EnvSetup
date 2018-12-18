@@ -18,7 +18,7 @@ ARG_DEBUG=0
 ARG_FORCE=0
 ARG_ENV='WORK'
 SCRIPT_NAME="$( basename "${BASH_SOURCE[0]}" )"
-RED='\033[0;31m'      # Red
+RED='\033[31m'        # Red
 NC='\033[0m'          # Color Reset
 
 
@@ -486,16 +486,16 @@ _pkgInstallProcess() {
             bash get_helm.sh > /dev/null 2>&1
         elif [[ "${package}" == "kubernetes-cli" ]] && [[ "${platform}" != 'MacOS' ]]; then
             _pkgInstall "${platform}" "kubectl" "${pkg_installer}"
-        elif [[ "${package}" == 'kops' ]] && [[ "${platform}" != 'MacOS' ]]; then
+        elif [[ "${package}" == 'kops' ]] && [[ "${platform}" != 'MacOS' ]] && [[ -z "$(command -v kop)" ]]; then
             ((ARG_DEBUG)) && echo 'Installing kops...'
             kops_version="$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)"
             if [[ -n "${kops_version}" ]]; then
-                wget -O kops https://github.com/kubernetes/kops/releases/download/"${kops_version}"/kops-linux-amd64
+                wget -O kops https://github.com/kubernetes/kops/releases/download/"${kops_version}"/kops-linux-amd64 2> /dev/null
                 chmod +x ./kops
                 _runAsRoot mv ./kops /usr/local/bin/
             else
                 ((ARG_DEBUG)) && echo 'Could not find the kops version...'
-                ((ARG_DEBUG)) && echo "Check ${RED}"curl -I https://api.github.com"${NC} to see if you have ran out of free api calls."
+                ((ARG_DEBUG)) && echo "Check ${RED}\"curl -I https://api.github.com\"${NC} to see if you have ran out of free api calls."
             fi
         else
             _pkgInstall "${platform}" "${package}" "${pkg_installer}"
