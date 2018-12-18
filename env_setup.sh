@@ -247,9 +247,14 @@ _pkgInstall() {
         brew_present=$?
        ${pkg_installer} cask list "${package}" > /dev/null 2>&1
         brew_cask_present=$?
-        (( brew_present && brew_cask_present )) && { ((ARG_DEBUG)) && echo "Installing ${package}..."; ${pkg_installer} install "${package}" > /dev/null 2>&1; initial_status=$?; (( initial_status )) && ${pkg_installer} cask install "${package}" > /dev/null 2>&1; }
+        (( brew_present && brew_cask_present )) && { ((ARG_DEBUG)) && echo "Installing ${package}...";
+                                                    ${pkg_installer} install "${package}" > /dev/null 2>&1;
+                                                    initial_status=$?; (( initial_status )) && ${pkg_installer} cask install "${package}" > /dev/null 2>&1;
+                                                    }
     elif [[ "${platform}" == 'Ubuntu' ]]; then
-        dpkg -s "${package}" >/dev/null 2>&1 || { ((ARG_DEBUG)) && echo "Installing ${package}..."; _runAsRoot "${pkg_installer}" install "${package}" -y > /dev/null 2>&1; }
+        dpkg -s "${package}" >/dev/null 2>&1 || { ((ARG_DEBUG)) && echo "Installing ${package}...";
+                                                _runAsRoot "${pkg_installer}" install "${package}" -y > /dev/null 2>&1;
+                                                }
     elif [[ "${platform}" == 'Linux' ]]; then
         if ! rpm -qa | grep -qw "${package}"; then
             ((ARG_DEBUG)) && echo "Installing ${package}..."
@@ -319,7 +324,7 @@ _profiles() {
 
     # A custom profile where you can add your own aliases or functions
     if [[ $(command -p grep -c '.bash_office_profile' ${bash_rc_file} 2> /dev/null) -eq 0 ]]; then
-        ((ARG_DEBUG)) && echo 'Setting up ~/.bash_office_profile - You can add your custom stuff here.'
+        ((ARG_DEBUG)) && echo "Setting up ~/.bash_office_profile - ${RED}You can add your custom stuff here.${NC}"
         echo '[ -f ~/.bash_office_profile ] && . ~/.bash_office_profile' >> ${bash_rc_file}
     fi
 
@@ -345,6 +350,9 @@ _profiles() {
     fi
 
     # Calling .bashrc in .bash_profile
+    if [[ ! -f ${bash_profile_file} ]]; then
+        touch ${bash_profile_file}
+    fi
     file_length=$(wc -l ${bash_profile_file} | awk '{ print $1 }' | tr -d '[:space:]')
     # shellcheck disable=SC2088
     if [[ $(command -p grep -c '~/.bashrc' ${bash_profile_file} 2> /dev/null | tr -d '[:space:]') -eq 0 ]]; then
