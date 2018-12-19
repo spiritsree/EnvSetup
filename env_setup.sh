@@ -159,6 +159,7 @@ _ask() {
 }
 
 # Base Setup returns installer
+# This function cannot have anything to print to stdout
 _baseSetup() {
     local platform=$1
     if [[ "${platform}" == 'MacOS' ]]; then
@@ -182,7 +183,7 @@ _baseSetup() {
     elif [[ "${platform}" == 'Ubuntu' ]]; then
         lsb_release=$(grep 'DISTRIB_RELEASE' /etc/lsb-release | awk -F'=' '{ print $2 }')
         pkg_installer=$(command -v apt-get)
-        _pkgInstall "${platform}" "apt-transport-https" "${pkg_installer}"
+        _pkgInstall "${platform}" "apt-transport-https" "${pkg_installer}" > /dev/null
         # adding google cloud key to apt
         google_key=$(mktemp /tmp/google_key.XXXXXXXXXX)
         curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg -o "${google_key}" > /dev/null 2>&1
@@ -537,7 +538,7 @@ _pkgInstallProcess() {
 }
 
 # Main Function
-function main() {
+main() {
     _getOptions "$@"
     ARG_ENV=$(_capitalize "${ARG_ENV}")
     platform=$(_getPlatform)
