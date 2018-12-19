@@ -505,6 +505,7 @@ _pkgInstallProcess() {
         elif [[ "${package}" == "kubernetes-cli" ]] && [[ "${platform}" != 'MacOS' ]]; then
             _pkgInstall "${platform}" "kubectl" "${pkg_installer}"
         elif [[ "${package}" == "terraform" ]] && [[ "${platform}" != 'MacOS' ]]; then
+            ((ARG_DEBUG)) && echo 'Installing terraform...'
             terraform_version=$(curl -s https://checkpoint-api.hashicorp.com/v1/check/terraform 2> /dev/null | jq -r -M '.current_version')
             curl -s "https://releases.hashicorp.com/terraform/${terraform_version}/terraform_${terraform_version}_linux_amd64.zip" -o /tmp/terraform_linux_amd64.zip 2> /dev/null
             unzip_bin=$(command -v unzip)
