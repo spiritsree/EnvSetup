@@ -505,16 +505,18 @@ _pkgInstallProcess() {
         elif [[ "${package}" == "kubernetes-cli" ]] && [[ "${platform}" != 'MacOS' ]]; then
             _pkgInstall "${platform}" "kubectl" "${pkg_installer}"
         elif [[ "${package}" == "terraform" ]] && [[ "${platform}" != 'MacOS' ]]; then
-            ((ARG_DEBUG)) && echo 'Installing terraform...'
-            terraform_version=$(curl -s https://checkpoint-api.hashicorp.com/v1/check/terraform 2> /dev/null | jq -r -M '.current_version')
-            curl -s "https://releases.hashicorp.com/terraform/${terraform_version}/terraform_${terraform_version}_linux_amd64.zip" -o /tmp/terraform_linux_amd64.zip 2> /dev/null
-            unzip_bin=$(command -v unzip)
-            if [[ -n "${unzip_bin}" ]]; then
-                ${unzip_bin} -o /tmp/terraform_linux_amd64.zip terraform > /dev/null 2>&1
-                chmod +x terraform
-                _runAsRoot mv terraform /usr/local/bin/terraform
+            if [[ -z "$(command -v terraform)" ]]; then
+                ((ARG_DEBUG)) && echo 'Installing terraform...'
+                terraform_version=$(curl -s https://checkpoint-api.hashicorp.com/v1/check/terraform 2> /dev/null | jq -r -M '.current_version')
+                curl -s "https://releases.hashicorp.com/terraform/${terraform_version}/terraform_${terraform_version}_linux_amd64.zip" -o /tmp/terraform_linux_amd64.zip 2> /dev/null
+                unzip_bin=$(command -v unzip)
+                if [[ -n "${unzip_bin}" ]]; then
+                    ${unzip_bin} -o /tmp/terraform_linux_amd64.zip terraform > /dev/null 2>&1
+                    chmod +x terraform
+                    _runAsRoot mv terraform /usr/local/bin/terraform
+                fi
+                unlink /tmp/terraform_linux_amd64.zip
             fi
-            unlink /tmp/terraform_linux_amd64.zip
         elif [[ "${package}" == 'kops' ]] && [[ "${platform}" != 'MacOS' ]]; then
             if [[ -z "$(command -v kops)" ]]; then
                 ((ARG_DEBUG)) && echo 'Installing kops...'
