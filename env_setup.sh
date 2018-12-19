@@ -180,6 +180,7 @@ _baseSetup() {
         fi
         echo "${pkg_installer}"
     elif [[ "${platform}" == 'Ubuntu' ]]; then
+        lsb_release=$(grep 'DISTRIB_RELEASE' /etc/lsb-release | awk -F'=' '{ print $2 }')
         pkg_installer=$(command -v apt-get)
         _pkgInstall "${platform}" "apt-transport-https" "${pkg_installer}"
         # adding google cloud key to apt
@@ -191,7 +192,16 @@ _baseSetup() {
         _runAsRoot add-apt-repository -y ppa:rmescandon/yq > /dev/null 2>&1
         _runAsRoot touch /etc/apt/sources.list.d/kubernetes.list
         # shellcheck disable=SC2034
-        tee_out=$(_runAsRoot echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' | tee -a /etc/apt/sources.list.d/kubernetes.list)
+        tee_out=$(_runAsRoot echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' | tee /etc/apt/sources.list.d/kubernetes.list)
+        if [[ -n "${lsb_release}" ]]; then
+            zsh_key=$(mktemp /tmp/zsh_key.XXXXXXXXXX)
+            wget -q "https://download.opensuse.org/repositories/shells:zsh-users:zsh-completions/xUbuntu_${lsb_release}/Release.key" -O "${zsh_key}" 2> /dev/null
+            # shellcheck disable=SC2034
+            apt_status=$(_runAsRoot apt-key add "${zsh_key}" 2> /dev/null)
+            unlink "${zsh_key}"
+            # shellcheck disable=SC2034
+            tee_out=$(_runAsRoot echo "deb http://download.opensuse.org/repositories/shells:/zsh-users:/zsh-completions/xUbuntu_${lsb_release}/ /" | tee /etc/apt/sources.list.d/zsh-completions.list)
+        fi
         _runAsRoot "${pkg_installer}" update -y > /dev/null 2>&1
         # python3-distutils required by get-pip.py
         _runAsRoot "${pkg_installer}" install python3-distutils -y > /dev/null 2>&1
@@ -252,7 +262,11 @@ _pkgInstall() {
                                                     initial_status=$?; (( initial_status )) && ${pkg_installer} cask install "${package}" > /dev/null 2>&1;
                                                     }
     elif [[ "${platform}" == 'Ubuntu' ]]; then
-        dpkg -s "${package}" >/dev/null 2>&1 || { ((ARG_DEBUG)) && echo "Installing ${package}...";
+        dpkg -s "${package}" >/dev/null 2>&1
+        dpkg_present=$?
+        command -v "${package}" >/dev/null 2>&1
+        command_present=$?
+         (( dpkg_present && command_present )) && { ((ARG_DEBUG)) && echo "Installing ${package}...";
                                                 _runAsRoot "${pkg_installer}" install "${package}" -y > /dev/null 2>&1;
                                                 }
     elif [[ "${platform}" == 'Linux' ]]; then
@@ -481,21 +495,37 @@ _pkgInstallProcess() {
                 fi
             fi
         elif [[ "${package}" =~ helm$ ]] && [[ "${platform}" != 'MacOS' ]]; then
-            ((ARG_DEBUG)) && echo 'Installing helm...'
-            curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get -o get_helm.sh 2> /dev/null
-            bash get_helm.sh > /dev/null 2>&1
+            if [[ -z "$(command -v helm)" ]]; then
+                ((ARG_DEBUG)) && echo 'Installing helm...'
+                curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get -o get_helm.sh 2> /dev/null
+                bash get_helm.sh > /dev/null 2>&1
+            fi
+        elif [[ "${package}" =~ ^go$ ]] && [[ "${platform}" != 'MacOS' ]]; then
+            _pkgInstall "${platform}" "golang" "${pkg_installer}"
         elif [[ "${package}" == "kubernetes-cli" ]] && [[ "${platform}" != 'MacOS' ]]; then
             _pkgInstall "${platform}" "kubectl" "${pkg_installer}"
-        elif [[ "${package}" == 'kops' ]] && [[ "${platform}" != 'MacOS' ]] && [[ -z "$(command -v kop)" ]]; then
-            ((ARG_DEBUG)) && echo 'Installing kops...'
-            kops_version="$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)"
-            if [[ -n "${kops_version}" ]]; then
-                wget -O kops https://github.com/kubernetes/kops/releases/download/"${kops_version}"/kops-linux-amd64 2> /dev/null
-                chmod +x ./kops
-                _runAsRoot mv ./kops /usr/local/bin/
-            else
-                ((ARG_DEBUG)) && echo 'Could not find the kops version...'
-                ((ARG_DEBUG)) && echo -e "Check ${RED}\"curl -I https://api.github.com\"${NC} to see if you have ran out of free api calls."
+        elif [[ "${package}" == "terraform" ]] && [[ "${platform}" != 'MacOS' ]]; then
+            terraform_version=$(curl -s https://checkpoint-api.hashicorp.com/v1/check/terraform 2> /dev/null | jq -r -M '.current_version')
+            curl -s "https://releases.hashicorp.com/terraform/${terraform_version}/terraform_${terraform_version}_linux_amd64.zip" -o /tmp/terraform_linux_amd64.zip 2> /dev/null
+            unzip_bin=$(command -v unzip)
+            if [[ -n "${unzip_bin}" ]]; then
+                ${unzip_bin} -o /tmp/terraform_linux_amd64.zip terraform > /dev/null 2>&1
+                chmod +x terraform
+                _runAsRoot mv terraform /usr/local/bin/terraform
+            fi
+            unlink /tmp/terraform_linux_amd64.zip
+        elif [[ "${package}" == 'kops' ]] && [[ "${platform}" != 'MacOS' ]]; then
+            if [[ -z "$(command -v kops)" ]]; then
+                ((ARG_DEBUG)) && echo 'Installing kops...'
+                kops_version="$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)"
+                if [[ -n "${kops_version}" ]]; then
+                    wget -O kops https://github.com/kubernetes/kops/releases/download/"${kops_version}"/kops-linux-amd64 2> /dev/null
+                    chmod +x ./kops
+                    _runAsRoot mv ./kops /usr/local/bin/
+                else
+                    ((ARG_DEBUG)) && echo 'Could not find the kops version...'
+                    ((ARG_DEBUG)) && echo -e "Check ${RED}\"curl -I https://api.github.com\"${NC} to see if you have ran out of free api calls."
+                fi
             fi
         else
             _pkgInstall "${platform}" "${package}" "${pkg_installer}"
