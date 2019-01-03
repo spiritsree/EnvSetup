@@ -181,7 +181,7 @@ _baseSetup() {
         fi
         echo "${pkg_installer}"
     elif [[ "${platform}" == 'Ubuntu' ]]; then
-        lsb_release=$(grep 'DISTRIB_RELEASE' /etc/lsb-release | awk -F'=' '{ print $2 }')
+        lsb_release=$(command -p lsb_release -r -s)
         pkg_installer=$(command -v apt-get)
         _pkgInstall "${platform}" "apt-transport-https" "${pkg_installer}" > /dev/null
         # adding google cloud key to apt
@@ -258,7 +258,7 @@ _pkgInstall() {
         brew_present=$?
        ${pkg_installer} cask list "${package}" > /dev/null 2>&1
         brew_cask_present=$?
-        (( brew_present && brew_cask_present )) && { ((ARG_DEBUG)) && echo "Installing ${package}...";
+        (( brew_present && brew_cask_present )) && { ((ARG_DEBUG)) && echo "|_ _ Installing ${package}...";
                                                     ${pkg_installer} install "${package}" > /dev/null 2>&1;
                                                     initial_status=$?; (( initial_status )) && ${pkg_installer} cask install "${package}" > /dev/null 2>&1;
                                                     }
@@ -267,19 +267,19 @@ _pkgInstall() {
         dpkg_present=$?
         command -v "${package}" >/dev/null 2>&1
         command_present=$?
-         (( dpkg_present && command_present )) && { ((ARG_DEBUG)) && echo "Installing ${package}...";
+         (( dpkg_present && command_present )) && { ((ARG_DEBUG)) && echo "|_ _ Installing ${package}...";
                                                 _runAsRoot "${pkg_installer}" install "${package}" -y > /dev/null 2>&1;
                                                 }
     elif [[ "${platform}" == 'Linux' ]]; then
         if ! rpm -qa | grep -qw "${package}"; then
-            ((ARG_DEBUG)) && echo "Installing ${package}..."
+            ((ARG_DEBUG)) && echo "|_ _ Installing ${package}..."
             if ! _runAsRoot "${pkg_installer}" install "${package}" -y > /dev/null 2>&1; then
                 new_package=$(yum search "${package}" | grep -e "^${package}[0-9]\." | awk -F'.' '{ print $1 }' | sort -nr | head -1)
-                ((ARG_DEBUG)) && echo "Installing ${new_package}..."
+                ((ARG_DEBUG)) && echo "|_ _ Installing ${new_package}..."
                 _runAsRoot "${pkg_installer}" install "${new_package}" -y > /dev/null 2>&1
                 pkg_bin=$(command -v "${new_package}")
                 if [[ -z "${pkg_bin}" ]]; then
-                    ((ARG_DEBUG)) && echo "Installing ${package}..."
+                    ((ARG_DEBUG)) && echo "|_ _ Installing ${package}..."
                     _runAsRoot ln -s "${pkg_bin}" "/usr/bin/${package}"
                 fi
             fi
@@ -345,7 +345,7 @@ _profiles() {
 
     # Adding custom profiles
     if [[ "${platform}" == 'MacOS' ]]; then
-        for bash_prof in .bash_{std,mac}_profile; do
+        for bash_prof in .bash_{std,mac}_profile .bash_std_functions; do
             ((ARG_DEBUG)) && echo "Copying profile ${bash_prof}"
             cp ${PROFILES_DIR}/${bash_prof} ~/${bash_prof}
             if [[ $(command -p grep -c "${bash_prof}" ${bash_rc_file} 2> /dev/null) -eq 0 ]]; then
@@ -354,7 +354,7 @@ _profiles() {
             fi
         done
     else
-        for bash_prof in .bash_{std,nix}_profile; do
+        for bash_prof in .bash_{std,nix}_profile .bash_std_functions; do
             ((ARG_DEBUG)) && echo "Copying profile ${bash_prof}"
             cp ${PROFILES_DIR}/${bash_prof} ~/${bash_prof}
             if [[ $(command -p grep -c "${bash_prof}" ${bash_rc_file} 2> /dev/null) -eq 0 ]]; then

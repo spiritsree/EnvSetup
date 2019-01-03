@@ -1,0 +1,380 @@
+# shellcheck shell=bash
+
+# arrayToStringWithDelimiter "<delimiter>" "<array>"
+arrayToStringWithDelimiter() {
+    local -r delimiter="${1}"
+    local -r list=("${@:2}")
+    local -r string="$(printf "%s${delimiter}" "${list[@]}")"
+    echo "${string:0:${#string} - ${#delimiter}}"
+}
+
+# excludeElementFromArray "<element>" "<array>"
+excludeElementFromArray() {
+    local -r element="${1}"
+    local array=("${@:2}")
+    local i=0
+    for ((i = 0; i < ${#array[@]}; i = i + 1)); do
+        if [[ "${array[i]}" = "${element}" ]]; then
+            unset array['${i}']
+        fi
+    done
+    echo "${array[@]}"
+}
+
+# isElementInArray "<element>" "<array>"
+isElementInArray() {
+    local -r element="${1}"
+    local -r array=("${@:2}")
+    local e=''
+    for e in "${array[@]}"; do
+        [[ "${e}" = "${element}" ]] && echo 'true' && return 0
+    done
+    echo 'false' && return 1
+}
+
+# sortArray "<array>"
+sortArray() {
+    local -r array=("${@}")
+    trimString "$(tr ' ' '\n' <<< "${array[@]}" | sort -u | tr '\n' ' ')"
+}
+
+# isEmptyString "<content>"
+isEmptyString() {
+    local -r string="${1}"
+    if [[ "$(trimString "${string}")" = '' ]]; then
+        echo 'true' && return 0
+    fi
+    echo 'false' && return 1
+}
+
+# To check if current shell is a login shell
+islogin() {
+    if [[ "$0" == '-bash' ]] ;then
+        echo 'Login Shell'
+    fi
+}
+
+# isPositiveInteger "<string>"
+isPositiveInteger() {
+    local -r string="${1}"
+    if [[ "${string}" =~ ^[1-9][0-9]*$ ]]; then
+        echo 'true' && return 0
+    fi
+    echo 'false' && return 1
+}
+
+# removeEmptyLines "<Content>"
+removeEmptyLines() {
+    local -r content="${1}"
+    echo -e "${content}" | sed '/^\s*$/d'
+}
+
+# trimString "<content>"
+trimString() {
+    local -r string="${1}"
+    sed 's,^[[:blank:]]*,,' <<< "${string}" | sed 's,[[:blank:]]*$,,'
+}
+
+# repeatString "<string>" "<count>"
+repeatString() {
+    local -r string="${1}"
+    local -r numberToRepeat="${2}"
+    if [[ "${string}" != '' && "$(isPositiveInteger "${numberToRepeat}")" = 'true' ]]; then
+        local -r result="$(printf "%${numberToRepeat}s")"
+        echo -e "${result// /${string}}"
+    fi
+}
+
+# removeNewline "<string>"
+removeNewline() {
+    local raw_string="$*"
+    if [[ "$(uname)" == 'Darwin' ]]; then
+        echo "${raw_string}" | tr -d '\r' | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n//g'
+    else
+        echo "${raw_string}" | tr -d '\r' | sed ':a;$!{N;s/\n/ /;ba;}'
+    fi
+}
+
+# printTable "<delimiter>" "<content>"
+printTable() {
+    local -r delimiter="${1}"
+    local -r tableData="$(removeEmptyLines "${2}")"
+    local colSize
+    colSize=$(tput cols)
+    local colLimit=$((colSize / 2))
+    if [[ "${delimiter}" != '' && "$(isEmptyString "${tableData}")" = 'false' ]]; then
+        local -r numberOfLines="$(wc -l <<< "${tableData}")"
+
+        if [[ "${numberOfLines}" -gt '0' ]]; then
+            local table=''
+            local i=1
+            for ((i = 1; i <= "${numberOfLines}"; i = i + 1)); do
+                local line=''
+                local tline=''
+                line="$(sed "${i}q;d" <<< "${tableData}")"
+                local numberOfColumns='0'
+                numberOfColumns="$(awk -F "${delimiter}" '{print NF}' <<< "${line}")"
+                # Add Line Delimiter
+                if [[ "${i}" -eq '1' ]]; then
+                    table="${table}$(printf '%s#+' "$(repeatString '#+' "${numberOfColumns}")")"
+                fi
+                # Add Header Or Body
+                table="${table}\n"
+                local j=1
+                for ((j = 1; j <= "${numberOfColumns}"; j = j + 1)); do
+                    tline=$(echo "${line}" | cut -c-${colLimit})
+                    table="${table}$(printf '#| %s' "$(cut -d "${delimiter}" -f "${j}" <<< "${tline}")")"
+                done
+                table="${table}#|\n"
+                # Add Line Delimiter
+                if [[ "${i}" -eq '1' ]] || [[ "${numberOfLines}" -gt '1' && "${i}" -eq "${numberOfLines}" ]]; then
+                    table="${table}$(printf '%s#+' "$(repeatString '#+' "${numberOfColumns}")")"
+                fi
+            done
+            if [[ "$(isEmptyString "${table}")" = 'false' ]]; then
+                echo -e "${table}" | column -s '#' -t | awk '/^\+/{gsub(" ", "-", $0)}1'
+            fi
+        fi
+    fi
+}
+
+function convertISO8601ToSeconds()
+{
+    local -r time="${1}"
+
+    if [[ "$(isMacOperatingSystem)" = 'true' ]]
+    then
+        date -j -u -f '%FT%T' "$(awk -F '.' '{ print $1 }' <<< "${time}" | tr -d 'Z')" +'%s'
+    elif [[ "$(isAmazonLinuxDistributor)" = 'true' || "$(isCentOSDistributor)" = 'true' || "$(isRedHatDistributor)" = 'true' || "$(isUbuntuDistributor)" = 'true' ]]
+    then
+        date -d "${time}" +'%s'
+    else
+        fatal '\nFATAL : only support Amazon-Linux, CentOS, Mac, RedHat, or Ubuntu OS'
+    fi
+}
+
+# getISO8601Date
+# To get ISO 8601 Date Time
+getISO8601Date() {
+    date -u +'%Y-%m-%dT%H:%M:%SZ'
+}
+
+# getUTCTime: To get UTC time in seconds
+getUTCTime() {
+    date -u +'%s'
+}
+
+# convertSecondsToTime "<seconds>"
+# To convert seconds to Human readable format
+convertSecondsToTime() {
+    local -r time="${1}"
+    local -r day="$((time / 60 / 60 / 24))"
+    local -r hour="$((time / 60 / 60 % 24))"
+    local -r minute="$((time / 60 % 60))"
+    local -r second="$((time % 60))"
+
+    if [[ "${day}" = '0' ]]; then
+        printf '%02dH %02dM %02dS' "${hour}" "${minute}" "${second}"
+    else
+        printf '%dD %02dH %02dM %02dS' "${day}" "${hour}" "${minute}" "${second}"
+    fi
+    echo
+}
+
+# isFileExist "<file>"
+isFileExist() {
+    local -r file="${1}"
+
+    if [[ "${file}" = '' || ! -f "${file}" ]]; then
+        return 1
+    else
+        return 0
+    fi
+}
+
+# isDirExist "<directory>"
+isDirExist() {
+    local -r dir="${1}"
+
+    if [[ "${dir}" = '' || ! -d "${dir}" ]]; then
+        return 1
+    else
+        return 0
+    fi
+}
+
+# isValidJSONData "<json_data>"
+isValidJSONData() {
+    local -r json="${1}"
+    if ( python -m 'json.tool' <<< "${json}" &> '/dev/null' ); then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# isValidJSONFile "<json_file>"
+isValidJSONFile()
+{
+    local -r json_file="${1}"
+
+    if isFileExist "${json_file}"; then
+        isValidJSONData "$(cat "${json_file}")"
+    fi
+}
+
+# createTempFile "[extension]"
+# Create a temp file /tmp/'%Y%m%d-%H%M%S'-XXXXXXXXXX[.ext]
+createTempFile() {
+    local extension="${1}"
+    if [[ "$(isEmptyString "${extension}")" == 'false' && "$(grep -i -o "^." <<< "${extension}")" != '.' ]]; then
+        extension=".${extension}"
+    fi
+
+    mktemp "/tmp/$(date +'%Y%m%d-%H%M%S')-XXXXXXXXXX${extension}"
+}
+
+# createTempDir
+# Create a temp directory /tmp/'%Y%m%d-%H%M%S'-XXXXXXXXXX
+createTempDir() {
+    mktemp -d "/tmp/$(date +'%Y%m%d-%H%M%S')-XXXXXXXXXX"
+}
+
+# isURLExistisURLExist "<url>"
+# Checks if a url exists
+isURLExist() {
+    local -r url="${1}"
+    curl_cmd=$(command -v curl)
+    if [[ -n "${curl_cmd}" ]]; then
+        if ( ${curl_cmd} -f --head -L "${url}" -o '/dev/null' -s --retry 12 --retry-delay 5 ||
+            ${curl_cmd} -f -L "${url}" -o '/dev/null' -r 0-0 -s --retry 12 --retry-delay 5 ); then
+            return 0
+        fi
+        return 1
+    else
+        echo 'Please install curl...'
+    fi
+}
+
+# downloadFile "<url>" "<target_file>" "[overwrite]"
+downloadFile() {
+    local -r url="${1}"
+    local -r target_file="${2}"
+    local overwrite="${3}"
+
+    if isURLExist "${url}"; then
+        if [[ "$(isEmptyString "${overwrite}")" == 'true' || "${overwrite}" != 'true' ]]; then
+            overwrite='false'
+        fi
+        if [[ -f "${target_file}" ]]; then
+            if [[ "${overwrite}" == 'false' ]]; then
+                echo "File ${target_file} exist use overwrite true"
+                exit 1
+            fi
+            rm -f "${target_file}"
+        elif [[ -e "${target_file}" ]]; then
+            echo "${target_file} already exists and not a file..."
+            exit 1
+        fi
+        curl -L "${url}" -o "${target_file}" --retry 12 --retry-delay 5 2> /dev/null
+    fi
+}
+
+# header "<title>"
+# Docorate header
+header() {
+    local -r title="${1}"
+    echo -e "\n\033[1;33m>>>>>>>>>> \033[1;4;35m${title}\033[0m \033[1;33m<<<<<<<<<<\033[0m\n"
+}
+
+# getPlatform
+getPlatform() {
+    local platform=''
+    if [[ "$(uname)" == 'Darwin' ]]; then
+        platform='MacOS'
+    elif [[ "$(uname)" == 'Linux' ]] && [[ -f '/etc/lsb-release' ]]; then
+        platform='Ubuntu'
+    elif [[ "$(uname)" == 'Linux' ]]; then
+        platform='Linux'
+    fi
+    echo "${platform}"
+}
+
+# pkgCleanup
+# Cleanup the pkg based on the system
+pkgCleanup() {
+    header 'CLEANING UP PKG INSTALLATION'
+    if [[ "$(getPlatform)" == 'Ubuntu' ]]; then
+        DEBIAN_FRONTEND='noninteractive' apt-get --fix-missing -y -o Dpkg::Options::='--force-confdef' -o Dpkg::Options::='--force-confold' autoremove
+        DEBIAN_FRONTEND='noninteractive' apt-get --fix-missing -y -o Dpkg::Options::='--force-confdef' -o Dpkg::Options::='--force-confold' clean
+        DEBIAN_FRONTEND='noninteractive' apt-get --fix-missing -y -o Dpkg::Options::='--force-confdef' -o Dpkg::Options::='--force-confold' autoclean
+    elif [[ "$(getPlatform)" == 'Linux' ]]; then
+        yum clean all
+    elif [[ "$(getPlatform)" == 'MacOS' ]]; then
+        brew_cmd=$(command -v brew)
+        if [[ -n "${brew_cmd}" ]]; then
+            ${brew_cmd} update
+            ${brew_cmd} upgrade
+            ${brew_cmd} cleanup -s
+        fi
+    fi
+}
+
+# encodeURL "<url>"
+encodeURL() {
+    local -r url="${1}"
+    local i=0
+    local j=''
+    for ((i = 0; i < ${#url}; i++)); do
+        j="${url:i:1}"
+        case "${j}" in
+            [a-zA-Z0-9.~_-])
+                printf '%s' "${j}"
+                ;;
+            ' ')
+                printf +
+                ;;
+            *)
+                printf '%%%X' "'${j}"
+                ;;
+        esac
+    done
+}
+
+# escapeGrepSearchPattern '<search_pattern>'
+escapeGrepSearchPattern() {
+    local -r searchPattern="${1}"
+    # shellcheck disable=SC2016
+    sed 's/[]\.|$(){}?+*^]/\\&/g' <<< "${searchPattern}"
+}
+
+# escapeSearchPattern '<search_pattern>'
+escapeSearchPattern() {
+    local -r searchPattern="${1}"
+    sed -e "s@\@@\\\\\\@@g" -e "s@\[@\\\\[@g" -e "s@\*@\\\\*@g" -e "s@\%@\\\\%@g" <<< "${searchPattern}"
+}
+
+# formatPath '<path>'
+formatPath() {
+    local path="${1}"
+    while [[ "$(grep -F '//' <<< "${path}")" != '' ]]; do
+        path="$(sed -e 's/\/\/*/\//g' <<< "${path}")"
+    done
+    sed -e 's/\/$//g' <<< "${path}"
+}
+
+# openPorts '<sleep_time>'
+openPorts() {
+    local -r sleep_secs="${1}"
+    lsof_cmd=$(command -v lsof)
+    if [[ -n "${lsof_cmd}" ]]; then
+        header 'DISPLAYING OPEN PORTS'
+        if [[ "$(isEmptyString "${sleep_secs}")" == 'false' ]]; then
+            sleep "${sleep_secs}"
+        fi
+        lsof -i -n -P | grep -i ' (LISTEN)$' | sort -f
+    else
+        echo 'lsof not installed. Please install...'
+        exit 1
+    fi
+}
