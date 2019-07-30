@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 #####################################################################################################
 #                            BASH Configuration 'N' Aliases                                         #
 #####################################################################################################
@@ -7,15 +8,19 @@
 #####################################################################################################
 
 # the basics
-: ${HOME=~}
-: ${LOGNAME=$(id -un)}
-: ${UNAME=$(uname)}
+: "${HOME=~}"
+: "${LOGNAME=$(id -un)}"
+: "${UNAME=$(uname)}"
 
 # complete hostnames from this file
-: ${HOSTFILE=~/.ssh/known_hosts}
+: "${HOSTFILE=~/.ssh/known_hosts}"
 
 # readline config
-: ${INPUTRC=~/.inputrc}
+: "${INPUTRC=~/.inputrc}"
+
+# Loading the std functions
+# shellcheck disable=SC1090
+source "${HOME}"/.bash_std_functions
 
 # Bash History
 export HISTCONTROL=ignoredups
@@ -23,14 +28,14 @@ export HISTSIZE=1000
 export HISTFILESIZE=2000
 
 # Color
-RED="\[\033[0;31m\]"
-BROWN="\[\033[0;33m\]"
-GREY="\[\033[0;97m\]"
-BLUE="\[\033[0;34m\]"
-BLUE2="\[\033[0;94m\]"
-GREEN="\[\033[0;92m\]"
-NC="\[\033[0m\]"
-SCREEN_ESC="\[\033k\033\134\]"
+export RED="\[\033[0;31m\]"
+export BROWN="\[\033[0;33m\]"
+export GREY="\[\033[0;97m\]"
+export BLUE="\[\033[0;34m\]"
+export BLUE2="\[\033[0;94m\]"
+export GREEN="\[\033[0;92m\]"
+export NC="\[\033[0m\]"
+export SCREEN_ESC="\[\033k\033\134\]"
 
 # notify of bg job completion immediately
 set -o notify
@@ -55,11 +60,12 @@ PATH="/usr/local/bin:$PATH:/usr/local/sbin:/usr/sbin:/sbin"
 
 # TERMCAPINFO for screen
 if [[ -n "$TERMCAP" ]] && [[ "$TERM" =~ "screen" ]]; then
-    export TERMCAP=$(echo $TERMCAP | sed -e 's/Co#8/Co#256/g')
+    TERMCAP="${TERMCAP//Co#8/Co#256}"
+    export TERMCAP
 fi
 
 # put ~/bin first on PATH
-if [ -d "$HOME/bin" ]; then
+if [[ -d "$HOME/bin" ]]; then
     PATH="$HOME/bin:$PATH"
 fi
 
@@ -88,10 +94,24 @@ parse_kube_context() {
     kubectl config current-context 2> /dev/null | sed -e "s/\(.*\)/(kube: \1)/"
 }
 
-# Command prompt setup
-export PS1="\W \[\033[33m\](${SHLVL})\[\033[00m\]\[\033[96m\]\$(parse_git_branch)\[\033[00m\]\[\033[31m\]\$(parse_kube_context)\[\033[00m\] $ "
+# aws session in prompt
+parse_aws_session() {
+    if [[ -n "${AWS_TARGET_PROFILE}" ]] ; then
+        local time_now
+        local time_left
+        time_now="$(date -u +%s)"
+        time_left="$(((AWS_SESSION_EXPIRATION-time_now)/60))"
+        if [[ "${time_left}" -lt 0 ]] ; then
+            time_left=0
+        fi
+        echo -n "(aws: ${AWS_TARGET_PROFILE} ${time_left}m)"
+    fi
+}
 
-if [ -n "$INTERACTIVE" -a -n "$LOGIN" ]; then
+# Command prompt setup
+export PS1="\W \[\033[33m\](${SHLVL})\[\033[00m\]\[\033[96m\]\$(parse_git_branch)\[\033[00m\]\[\033[31m\]\$(parse_kube_context)\[\033[00m\]\[\033[92m\]\$(parse_aws_session)\[\033[00m\] $ "
+
+if [[ -n "$INTERACTIVE" ]] && [[ -n "$LOGIN" ]]; then
     uname -npsr
     uptime
 fi
@@ -118,15 +138,15 @@ alias ~="cd ~"
 alias beep='tput bel'
 
 # general aliases
-alias c="clear"                           # clear screen
-alias which="\which"                      # remove aliased which
-alias mkdir="mkdir -pv"                   # parent dir creation if not exists
-alias less="less -FSRXc"                  # less formatting
-alias path="echo -e ${PATH//:/\\n}"       # list path
-alias show_options="shopt"                # show options
-alias fix_stty='stty sane'                # fix stty
-mkcd() { mkdir -p "$1" && cd "$1"; }     # make dir and cd to it
-alias tee_out="tee /tmp/terminalOut.txt"  # terminal out to a file
+alias c="clear"                                     # clear screen
+alias which="\which"                                # remove aliased which
+alias mkdir="mkdir -pv"                             # parent dir creation if not exists
+alias less="less -FSRXc"                            # less formatting
+alias path='echo -e ${PATH//:/\\n}'                 # list path
+alias show_options="shopt"                          # show options
+alias fix_stty='stty sane'                          # fix stty
+mkcd() { mkdir -p "$1" && cd "$1" || return; }      # make dir and cd to it
+alias tee_out="tee /tmp/terminalOut.txt"            # terminal out to a file
 
 # showalias test:    Show alias
 showalias() { alias | grep --color=always -i -a1 bas | grep -v '^\s*$'; }
@@ -135,7 +155,7 @@ showalias() { alias | grep --color=always -i -a1 bas | grep -v '^\s*$'; }
 colors() {
     for i in {0..255}; do
         printf "\x1b[38;5;${i}mcolor%-5i\x1b[0m" $i
-        if ! (( ($i + 1 ) % 8 )); then
+        if ! (( (i + 1 ) % 8 )); then
             echo
         fi
     done
@@ -151,7 +171,7 @@ alias grep='grep --color=always'
 alias egrep='egrep --color=always'
 alias fgrep='fgrep --color=always'
 lgrep() {
-    if [[ -z "$@" ]]; then
+    if [[ -z "$*" ]]; then
         echo
         echo 'Usage: lgrep <pattern> [<file>]'
         echo
@@ -161,22 +181,16 @@ lgrep() {
 }
 
 # linting
-if [[ -n $(which yamllint) ]] && [[ -f ~/.yamllint ]]; then
+if [[ -n "$(command -v yamllint)" ]] && [[ -f ~/.yamllint ]]; then
     alias yamllint="yamllint -c ~/.yamllint"
 fi
 
 fit() {
-    cut -c-`eval "tput cols"`;
-}
-
-islogin() {
-    if [[ "$0" == '-bash' ]] ;then
-        echo 'Login Shell'
-    fi
+    cut -c-"$(eval tput cols)";
 }
 
 trunc() {
-    if [[ -z "$@" ]]; then
+    if [[ -z "$*" ]]; then
         echo
         echo 'Truncate files'
         echo
@@ -192,20 +206,20 @@ trunc() {
 # extract compressed files
 extract () {
     if [[ -f "$1" ]] ; then
-        case $(echo "$1" | tr "[A-Z]" "[a-z]") in
-            *.tar.bz2)   tar xjf $1     ;;
-            *.tar.gz)    tar xzf $1     ;;
-            *.tar.xz)    tar xzf $1     ;;
-            *.bz2)       bunzip2 $1     ;;
-            *.rar)       unrar e $1     ;;
-            *.gz)        gunzip $1      ;;
-            *.tar)       tar xf $1      ;;
-            *.tbz2)      tar xjf $1     ;;
-            *.tgz)       tar xzf $1     ;;
-            *.txz)       tar xzf $1     ;;
-            *.zip)       unzip $1       ;;
-            *.Z)         uncompress $1  ;;
-            *.7z)        7z x $1        ;;
+        case $(echo "$1" | tr '[:upper:]' '[:lower:]') in
+            *.tar.bz2)   tar xjf "${1}"     ;;
+            *.tar.gz)    tar xzf "${1}"     ;;
+            *.tar.xz)    tar xzf "${1}"     ;;
+            *.bz2)       bunzip2 "${1}"     ;;
+            *.rar)       unrar e "${1}"     ;;
+            *.gz)        gunzip "${1}"      ;;
+            *.tar)       tar xf "${1}"      ;;
+            *.tbz2)      tar xjf "${1}"     ;;
+            *.tgz)       tar xzf "${1}"     ;;
+            *.txz)       tar xzf "${1}"     ;;
+            *.zip)       unzip "${1}"       ;;
+            *.Z)         uncompress "${1}"  ;;
+            *.7z)        7z x "${1}"        ;;
             *)     echo "'$1' cannot be extracted via extract()" ;;
         esac
     else
@@ -224,103 +238,11 @@ aw() {
 
 # Color diff
 mydiff() {
-    if [[ -z $@ ]] || [[ ! $# -eq 2 ]]; then
+    if [[ -z "$*" ]] || [[ ! $# -eq 2 ]]; then
         echo 'Give two files or folders to compare'
         return 1
     else
-        diff -bwBr $@ | colordiff
-    fi
-}
-
-# removeEmptyLines "<Content>"
-removeEmptyLines() {
-    local -r content="${1}"
-    echo -e "${content}" | sed '/^\s*$/d'
-}
-
-# isEmptyString "<content>"
-isEmptyString() {
-    local -r string="${1}"
-    if [[ "$(trimString "${string}")" = '' ]]; then
-        echo 'true' && return 0
-    fi
-    echo 'false' && return 1
-}
-
-# trimString "<content>"
-trimString() {
-    local -r string="${1}"
-    sed 's,^[[:blank:]]*,,' <<< "${string}" | sed 's,[[:blank:]]*$,,'
-}
-
-# repeatString "<string>" "<count>"
-repeatString() {
-    local -r string="${1}"
-    local -r numberToRepeat="${2}"
-    if [[ "${string}" != '' && "$(isPositiveInteger "${numberToRepeat}")" = 'true' ]]; then
-        local -r result="$(printf "%${numberToRepeat}s")"
-        echo -e "${result// /${string}}"
-    fi
-}
-
-# isPositiveInteger "<string>"
-isPositiveInteger() {
-    local -r string="${1}"
-    if [[ "${string}" =~ ^[1-9][0-9]*$ ]]; then
-        echo 'true' && return 0
-    fi
-    echo 'false' && return 1
-}
-
-# removeNewline "<string>"
-removeNewline() {
-    local raw_string="$@"
-    if [ $(uname) == 'Darwin' ]; then
-        echo "${raw_string}" | tr -d '\r' | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n//g'
-    else
-        echo "${raw_string}" | tr -d '\r' | sed ':a;$!{N;s/\n/ /;ba;}'
-    fi
-}
-
-# printTable "<delimiter>" "<content>"
-printTable() {
-    local -r delimiter="${1}"
-    local -r tableData="$(removeEmptyLines "${2}")"
-    local colSize=$(tput cols)
-    local colLimit=$((${colSize} / 2))
-    if [[ "${delimiter}" != '' && "$(isEmptyString "${tableData}")" = 'false' ]]; then
-        local -r numberOfLines="$(wc -l <<< "${tableData}")"
-
-        if [[ "${numberOfLines}" -gt '0' ]]; then
-            local table=''
-            local i=1
-            for ((i = 1; i <= "${numberOfLines}"; i = i + 1)); do
-                local line=''
-                local tline=''
-                line="$(sed "${i}q;d" <<< "${tableData}")"
-                local numberOfColumns='0'
-                numberOfColumns="$(awk -F "${delimiter}" '{print NF}' <<< "${line}")"
-                # Add Line Delimiter
-                if [[ "${i}" -eq '1' ]]; then
-                    table="${table}$(printf '%s#+' "$(repeatString '#+' "${numberOfColumns}")")"
-                fi
-                # Add Header Or Body
-                table="${table}\n"
-                local j=1
-                for ((j = 1; j <= "${numberOfColumns}"; j = j + 1)); do
-                    tline=$(echo "${line}" | cut -c-${colLimit})
-                    table="${table}$(printf '#| %s' "$(cut -d "${delimiter}" -f "${j}" <<< "${tline}")")"
-                done
-                table="${table}#|\n"
-                # Add Line Delimiter
-                if [[ "${i}" -eq '1' ]] || [[ "${numberOfLines}" -gt '1' && "${i}" -eq "${numberOfLines}" ]]; then
-                    table="${table}$(printf '%s#+' "$(repeatString '#+' "${numberOfColumns}")")"
-                fi
-            done
-            if [[ "$(isEmptyString "${table}")" = 'false' ]]; then
-                echo -e "${table}" | column -s '#' -t | awk '/^\+/{gsub(" ", "-", $0)}1'
-            fi
-        fi
+        diff -bwBr "$@" | colordiff
     fi
 }
 
@@ -330,7 +252,7 @@ weather() {
 }
 
 findPid () {
-    if [[ -z "$@" ]]; then
+    if [[ -z "$*" ]]; then
         echo
         echo 'Find pid of process'
         echo
@@ -359,7 +281,7 @@ ii() {
 }
 
 +x() {
-    if [[ -z "$@" ]]; then
+    if [[ -z "$*" ]]; then
         echo
         echo 'Executable permission for a file.'
         echo
@@ -371,7 +293,7 @@ ii() {
 }
 
 gxpr() {
-    if [[ -z "$@" ]] || [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]]; then
+    if [[ -z "$*" ]] || [[ " $* " =~ ' -h ' ]] || [[ "$*" =~ "--help" ]]; then
         echo
         echo 'Usage: gxpr <expression>'
         echo
@@ -406,7 +328,7 @@ gxpr() {
         )
         # if we don't have a result, assume it's an invalid expression
         if [[ -z "${res}" ]]; then
-            echo "invalid expression: $@"
+            echo "invalid expression: $*"
         else
             echo "${res}"
         fi
@@ -418,7 +340,7 @@ gxpr() {
 #---------------------------------------------------------------------------------------------------#
 
 headers() {
-    if [[ -z "$@" ]]; then
+    if [[ -z "$*" ]]; then
         echo
         echo 'Usage: headers <url>'
         echo
@@ -429,26 +351,26 @@ headers() {
 
 # Web Debug
 curlD() {
-    if [[ -z "$@" ]]; then
+    if [[ -z "$*" ]]; then
         echo
         echo 'Debug web performance.'
         echo
         echo 'Usage: curlD <url>'
         echo
     else
-        curl $@ 2> /dev/null -o /dev/null -w "dns: %{time_namelookup} connect: %{time_connect} pretransfer: %{time_pretransfer} starttransfer: %{time_starttransfer} total: %{time_total}\n"
+        curl "$@" 2> /dev/null -o /dev/null -w "dns: %{time_namelookup} connect: %{time_connect} pretransfer: %{time_pretransfer} starttransfer: %{time_starttransfer} total: %{time_total}\n"
     fi
 }
 
 curlH() {
-    if [[ -z "$@" ]]; then
+    if [[ -z "$*" ]]; then
         echo
         echo 'Curl Headers'
         echo
         echo 'Usage: curlH <url>'
         echo
     else
-        curl -I -L $@
+        curl -I -L "$@"
     fi
 }
 
@@ -458,7 +380,7 @@ curlH() {
 
 # Start an HTTP server from a directory, optionally specifying the port
 server() {
-    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]]; then
+    if [[ " $* " =~ ' -h ' ]] || [[ "$*" =~ "--help" ]]; then
         echo
         echo 'Usage: server [<port>]'
         echo
@@ -471,7 +393,7 @@ server() {
 }
 
 ports() {
-    if [[ -z "${@}" ]]; then
+    if [[ -z "$*" ]]; then
         echo
         echo 'Programs listening on port.'
         echo
@@ -496,9 +418,11 @@ get_ssl_domainnames() {
     echo "Testing ${domain}…"
     echo ''
 
-    local tmp=$(echo -e "GET / HTTP/1.0\nEOT" | openssl s_client -connect "${domain}:443" -servername "${domain}" 2>&1)
+    local tmp
+    tmp=$(echo -e "GET / HTTP/1.0\nEOT" | openssl s_client -connect "${domain}:443" -servername "${domain}" 2>&1)
     if [[ "${tmp}" = *"-----BEGIN CERTIFICATE-----"* ]]; then
-        local certText=$(echo "${tmp}" | openssl x509 -text -certopt "no_aux, no_header, no_issuer, no_pubkey, no_serial, no_sigdump, no_signame, no_validity, no_version")
+        local certText
+        certText=$(echo "${tmp}" | openssl x509 -text -certopt "no_aux, no_header, no_issuer, no_pubkey, no_serial, no_sigdump, no_signame, no_validity, no_version")
         echo "Common Name:"
         echo ''
         echo "${certText}" | grep "Subject:" | sed -e "s/^.*CN=//" | sed -e "s/\/emailAddress=.*//"
@@ -514,19 +438,40 @@ get_ssl_domainnames() {
 }
 
 ssh-pubkey() {
-    [[ -f ~/.ssh/id_rsa.pub ]] && { cat ~/.ssh/id_rsa.pub; } || { echo 'No RSA Keys'; }
+    if [[ -f ~/.ssh/id_rsa.pub ]]; then
+        cat ~/.ssh/id_rsa.pub
+    else
+        echo 'No RSA Keys'
+    fi
 }
 
 ssh-agent-run() {
-    eval `ssh-agent` > /dev/null
-    echo "ssh-agent started with socket $SSH_AUTH_SOCK..."
-    ssh-key-create
-    ssh-add 2> /dev/null
-    ssh-add -l
+    local email
+    local cmd
+    if [[ " $* " =~ ' -h ' ]] || [[ "$*" =~ '--help' ]]; then
+        echo
+        echo 'Usage: ssh-agent-run [-h|--help] [<email>]'
+        echo
+    else
+        email="$1"
+        local regex='^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+$'
+        echo "${email}"
+        if [[ -n "${email}" ]] && [[ "${email}" =~ ${regex} ]]; then
+            cmd="ssh-key-create -e ${email}"
+        else
+            echo 'No valid email provided. Continuing without email.'
+            cmd="ssh-key-create"
+        fi
+        eval "$(ssh-agent)" > /dev/null
+        echo "ssh-agent started with socket $SSH_AUTH_SOCK..."
+        ${cmd}
+        ssh-add 2> /dev/null
+        ssh-add -l
+    fi
 }
 
 ssh-key-match() {
-    if [[ -z "$@" ]] || [[ $# -ne 2 ]]; then
+    if [[ -z "$*" ]] || [[ $# -ne 2 ]]; then
         echo
         echo "Check if ssh private key matches with public key..."
         echo
@@ -535,8 +480,7 @@ ssh-key-match() {
     else
         key1=$1
         key2=$2
-        diff <( ssh-keygen -y -e -f "${key1}" ) <( ssh-keygen -y -e -f "${key2}" ) > /dev/null
-        if [[ $? -eq 0 ]]; then
+        if diff <( ssh-keygen -y -e -f "${key1}" ) <( ssh-keygen -y -e -f "${key2}" ) > /dev/null; then
             echo "${key1} and ${key2} match..."
         else
             echo "${key1} and ${key2} differ..."
@@ -551,11 +495,11 @@ randpass() {
     else
         MAXSIZE=$1
     fi
-    array1=( q w e r t y u i o p a s d f g h j k l z x c v b n m Q W E R T Y U I O P A S D F G H J K L Z X C V B N M 1 2 3 4 5 6 7 8 9 0 \! \@ \$ \% \^ \& \* \! \@ \$ \% \^ \& \* \@ \$ \% \^ \& \* )
+    array1=( q w e r t y u i o p a s d f g h j k l z x c v b n m Q W E R T Y U I O P A S D F G H J K L Z X C V B N M 1 2 3 4 5 6 7 8 9 0 '!' '@' '$' '%' '^' '&' '*' '!' '@' '$' '%' '^' '&' '*' '@' '$' '%' '^' '&' '*' )
     MODNUM=${#array1[*]}
     pwd_len=0
     while [[ $pwd_len -lt $MAXSIZE ]]; do
-        index=$(($RANDOM%$MODNUM))
+        index=$((RANDOM % MODNUM))
         echo -n "${array1[$index]}"
         ((pwd_len++))
     done
@@ -563,9 +507,9 @@ randpass() {
 }
 
 ssh-key-create() {
-    timestamp=`date +%s`
+    timestamp=$(date +%s)
     force=false
-    if [[ " $@ " =~ ' -h ' ]] || [[ $@ =~ '--help' ]]; then
+    if [[ " $* " =~ ' -h ' ]] || [[ "$*" =~ '--help' ]]; then
         echo
         echo 'Usage: ssh-key-create [-h|--help] [-e|-email <email>] [-f|--force]'
         echo
@@ -582,7 +526,7 @@ ssh-key-create() {
                 [[ -z "${email}" || "${email}" == '-f' ]] && { echo 'Provide a valid email !'; return 1; }
             fi
         done
-        ${force} && { mv ~/.ssh/id_rsa ~/.ssh/id_rsa.orig.${timestamp}; mv ~/.ssh/id_rsa.pub ~/.ssh/id_rsa.pub.orig.${timestamp}; }
+        ${force} && { mv ~/.ssh/id_rsa ~/.ssh/id_rsa.orig."${timestamp}"; mv ~/.ssh/id_rsa.pub ~/.ssh/id_rsa.pub.orig."${timestamp}"; }
         if [[ -f ~/.ssh/id_rsa ]]; then
             echo 'RSA key already exists. Not creating...'
         else
@@ -602,7 +546,7 @@ ssh-key-create() {
 openssl_genrsa() {
     out_file='rsa.key'
     bits=4096
-    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ $(($# % 2)) -gt 0 ]]; then
+    if [[ " $* " =~ ' -h ' ]] || [[ "$*" =~ "--help" ]] || [[ $(($# % 2)) -gt 0 ]]; then
         echo
         echo 'Generate an RSA key..'
         echo '    Usage: openssl_genrsa [-o out_file] [-b bits]'
@@ -618,21 +562,21 @@ openssl_genrsa() {
         if [[ ${bits} -lt 1024 ]]; then
             echo 'Minimum key size is 1024'
         else
-            openssl genrsa -out ${out_file} ${bits}
+            openssl genrsa -out "${out_file}" "${bits}"
         fi
     fi
 }
 
 openssl_pubkey() {
-    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
+    if [[ " $* " =~ ' -h ' ]] || [[ "$*" =~ "--help" ]] || [[ -z $1 ]]; then
         echo
         echo 'Get public key from rsa key..'
         echo '    Usage: openssl_pubkey <rsa_key_file>'
         echo
     else
-        in_file=$1
-        if [[ -f ${in_file} ]]; then
-            openssl rsa -in ${in_file} -pubout
+        in_file="$1"
+        if [[ -f "${in_file}" ]]; then
+            openssl rsa -in "${in_file}" -pubout
         else
             echo 'Key file does not exist !!!'
         fi
@@ -640,15 +584,15 @@ openssl_pubkey() {
 }
 
 openssl_modulus() {
-    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
+    if [[ " $* " =~ ' -h ' ]] || [[ "$*" =~ "--help" ]] || [[ -z $1 ]]; then
         echo
         echo 'Get modulus from rsa key..'
         echo '    Usage: openssl_modulus <rsa_key_file>'
         echo
     else
-        in_file=$1
-        if [[ -f ${in_file} ]]; then
-            openssl rsa -in ${in_file} -noout -modulus
+        in_file="$1"
+        if [[ -f "${in_file}" ]]; then
+            openssl rsa -in "${in_file}" -noout -modulus
         else
             echo 'Key file does not exist !!!'
         fi
@@ -656,15 +600,15 @@ openssl_modulus() {
 }
 
 openssl_checkrsa() {
-    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
+    if [[ " $* " =~ ' -h ' ]] || [[ "$*" =~ "--help" ]] || [[ -z "$1" ]]; then
         echo
         echo 'Check RSA key..'
         echo '    Usage: openssl_checkrsa <rsa_key_file>'
         echo
     else
-        in_file=$1
-        if [[ -f ${in_file} ]]; then
-            openssl rsa -check -in ${in_file} -noout
+        in_file="$1"
+        if [[ -f "${in_file}" ]]; then
+            openssl rsa -check -in "${in_file}" -noout
         else
             echo 'Key file does not exist !!!'
         fi
@@ -672,15 +616,15 @@ openssl_checkrsa() {
 }
 
 openssl_checkcsr() {
-    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
+    if [[ " $* " =~ ' -h ' ]] || [[ "$*" =~ "--help" ]] || [[ -z "$1" ]]; then
         echo
         echo 'Check CSR..'
         echo '    Usage: openssl_checkcsr <csr_file>'
         echo
     else
-        in_file=$1
-        if [[ -f ${in_file} ]]; then
-            openssl req -in ${in_file} -verify -noout
+        in_file="$1"
+        if [[ -f "${in_file}" ]]; then
+            openssl req -in "${in_file}" -verify -noout
         else
             echo 'Key file does not exist !!!'
         fi
@@ -688,15 +632,15 @@ openssl_checkcsr() {
 }
 
 openssl_rsaout() {
-    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
+    if [[ " $* " =~ ' -h ' ]] || [[ "$*" =~ "--help" ]] || [[ -z "$1" ]]; then
         echo
         echo 'Print textual form of RSA..'
         echo '    Usage: openssl_rsaout <rsa_key_file>'
         echo
     else
-        in_file=$1
-        if [[ -f ${in_file} ]]; then
-            openssl rsa -in ${in_file} -text -noout
+        in_file="$1"
+        if [[ -f "${in_file}" ]]; then
+            openssl rsa -in "${in_file}" -text -noout
         else
             echo 'Key file does not exist !!!'
         fi
@@ -704,15 +648,15 @@ openssl_rsaout() {
 }
 
 openssl_nopass() {
-    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
+    if [[ " $* " =~ ' -h ' ]] || [[ "$*" =~ "--help" ]] || [[ -z "$1" ]]; then
         echo
         echo 'Remove passphrase from RSA..'
         echo '    Usage: openssl_nopass <rsa_key_file>'
         echo
     else
-        in_file=$1
-        if [[ -f ${in_file} ]]; then
-            openssl rsa -in ${in_file} -out ${in_file}
+        in_file="$1"
+        if [[ -f "${in_file}" ]]; then
+            openssl rsa -in "${in_file}" -out "${in_file}"
         else
             echo 'Key file does not exist !!!'
         fi
@@ -720,31 +664,31 @@ openssl_nopass() {
 }
 
 openssl_sigverify() {
-    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ $(($# % 2)) -gt 0 ]] || [[ $# -lt 4 ]]; then
+    if [[ " $* " =~ ' -h ' ]] || [[ "$*" =~ "--help" ]] || [[ $(($# % 2)) -gt 0 ]] || [[ $# -lt 4 ]]; then
         echo
         echo 'Verify key and certificate matches..'
         echo '    Usage: openssl_sigverify -c <cert_file> -k <key_file> [-s <csr_file>]'
         echo
     else
-        while [[ -n $1 ]]; do
-            if [[ $1 == '-c' ]]; then
-                shift; cert=$1; shift
-            elif [[ $1 == '-k' ]]; then
-                shift; key=$1; shift
-            elif [[ $1 == '-s' ]]; then
-                shift; csr=$1; shift
+        while [[ -n "$1" ]]; do
+            if [[ "$1" == '-c' ]]; then
+                shift; cert="$1"; shift
+            elif [[ "$1" == '-k' ]]; then
+                shift; key="$1"; shift
+            elif [[ "$1" == '-s' ]]; then
+                shift; csr="$1"; shift
             fi
         done
-        cert_sig=$(openssl x509 -noout -modulus -in ${cert} | openssl sha256)
-        key_sig=$(openssl rsa -noout -modulus -in ${key} | openssl sha256)
-        if [[ -n ${csr} ]]; then
-            csr_sig=$(openssl req -noout -modulus -in ${csr} | openssl sha256)
+        cert_sig=$(openssl x509 -noout -modulus -in "${cert}" | openssl sha256)
+        key_sig=$(openssl rsa -noout -modulus -in "${key}" | openssl sha256)
+        if [[ -n "${csr}" ]]; then
+            csr_sig=$(openssl req -noout -modulus -in "${csr}" | openssl sha256)
         fi
-        if [[ ${cert_sig} == ${key_sig} ]]; then
+        if [[ "${cert_sig}" == "${key_sig}" ]]; then
             echo "Certificate ${cert} and Key ${key} matches.."
         fi
-        if [[ -n ${csr} ]]; then
-            if [[ ${cert_sig} == ${csr_sig} ]]; then
+        if [[ -n "${csr}" ]]; then
+            if [[ "${cert_sig}" == "${csr_sig}" ]]; then
                 echo "Certificate ${cert} and CSR ${csr} matches.."
             fi
         fi
@@ -752,85 +696,85 @@ openssl_sigverify() {
 }
 
 openssl_checkconnect() {
-    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
+    if [[ " $* " =~ ' -h ' ]] || [[ "$*" =~ "--help" ]] || [[ -z "$1" ]]; then
         echo
         echo 'Check TLS connectivity..'
         echo '    Usage: openssl_checkconnect <server:port>'
         echo
     else
-        server=$1
-        openssl s_client -connect ${server} < /dev/null
+        server="$1"
+        openssl s_client -connect "${server}" < /dev/null
     fi
 }
 
 openssl_certexpiry() {
-    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
+    if [[ " $* " =~ ' -h ' ]] || [[ "$*" =~ "--help" ]] || [[ -z "$1" ]]; then
         echo
         echo 'Check certificate expiry..'
         echo '    Usage: openssl_certexpiry <server:port>'
         echo
     else
-        server=$1
-        echo | openssl s_client  -connect ${server} 2>/dev/null | openssl x509 -noout -dates -fingerprint
+        server="$1"
+        echo | openssl s_client  -connect "${server}" 2>/dev/null | openssl x509 -noout -dates -fingerprint
     fi
 }
 
 openssl_connecttime() {
-    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
+    if [[ " $* " =~ ' -h ' ]] || [[ "$*" =~ "--help" ]] || [[ -z "$1" ]]; then
         echo
         echo 'Check TLS connectivity..'
         echo '    Usage: openssl_connecttime <server:port>'
         echo
     else
-        server=$1
+        server="$1"
         echo '========== without connection re-use ============='
-        openssl s_time -connect ${server} -new
+        openssl s_time -connect "${server}" -new
         echo '========== with connection re-use ============='
-        openssl s_time -connect ${server} -reuse
+        openssl s_time -connect "${server}" -reuse
     fi
 }
 
 openssl_get_server_cert() {
-    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
+    if [[ " $* " =~ ' -h ' ]] || [[ "$*" =~ "--help" ]] || [[ -z "$1" ]]; then
         echo
         echo 'Get SSL certificate from server..'
         echo '    Usage: openssl_get_server_cert <server:port>'
         echo
     else
-        server=$1
-        openssl s_client -connect ${server} 2>&1 < /dev/null | sed -n '/-----BEGIN/,/-----END/p'
+        server="$1"
+        openssl s_client -connect "${server}" 2>&1 < /dev/null | sed -n '/-----BEGIN/,/-----END/p'
     fi
 }
 
 openssl_get_server_cacert() {
-    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
+    if [[ " $* " =~ ' -h ' ]] || [[ "$*" =~ "--help" ]] || [[ -z "$1" ]]; then
         echo
         echo 'Get SSL CA certificate from server..'
         echo '    Usage: openssl_get_server_cacert <server:port>'
         echo
     else
-        server=$1
-        domain=$(echo ${server} | awk -F':' '{ print $1 }')
-        port=$(echo ${server} | awk -F':' '{ print $2 }')
-        openssl s_client -showcerts -host ${domain} -port ${port} < /dev/null 2>&1 | sed -n '/-----BEGIN/,/-----END/p'
+        server="$1"
+        domain=$(echo "${server}" | awk -F':' '{ print $1 }')
+        port=$(echo "${server}" | awk -F':' '{ print $2 }')
+        openssl s_client -showcerts -host "${domain}" -port "${port}" < /dev/null 2>&1 | sed -n '/-----BEGIN/,/-----END/p'
     fi
 }
 
 openssl_get_ocsp_response() {
-    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ -z $1 ]]; then
+    if [[ " $* " =~ ' -h ' ]] || [[ "$*" =~ "--help" ]] || [[ -z "$1" ]]; then
         echo
         echo 'Get OCSP response of SSL certificate from server..'
         echo '    Usage: openssl_get_ocsp_response <server:port>'
         echo
     else
-        server=$1
+        server="$1"
         cert_file="/tmp/cert.pem"
         chain_file="/tmp/chain.pem"
-        openssl_get_server_cert ${server} > ${cert_file}
-        ocsp_uri=$(openssl x509 -in ${cert_file} -noout -ocsp_uri)
-        openssl_get_server_cacert ${server} > ${chain_file}
-        openssl ocsp -issuer ${chain_file} -VAfile ${chain_file} -cert ${cert_file} -text -url ${ocsp_uri}
-        rm -f ${cert_file} ${chain_file}
+        openssl_get_server_cert "${server}" > "${cert_file}"
+        ocsp_uri=$(openssl x509 -in "${cert_file}" -noout -ocsp_uri)
+        openssl_get_server_cacert "${server}" > "${chain_file}"
+        openssl ocsp -issuer "${chain_file}" -VAfile "${chain_file}" -cert "${cert_file}" -text -url "${ocsp_uri}"
+        rm -f "${cert_file}" "${chain_file}"
     fi
 }
 
@@ -841,15 +785,17 @@ openssl_get_ocsp_response() {
 # Vagrant
 # Use: vagrant_boxes 'ubuntu'
 vagrant_boxes() {
-    if [[ -z $1 ]]; then
+    if [[ -z "$1" ]]; then
         echo
         echo 'Usage: vagrant_boxes <search-term>'
         echo
         echo '  e.g: vagrant_boxes ubuntu'
         echo
     else
-        local result=$(curl "https://app.vagrantup.com/api/v1/search?q=$1&limit=20&provider=virtualbox&sort=updated" 2> /dev/null | jq -r '.boxes[] | .tag  + "<" + .short_description + ">"')
-        result=$(removeNewline "${result}" | tr -d '#' | tr -d ',' | tr '<' ',' | tr '>' '\n')
+        local result
+        result=$(curl "https://app.vagrantup.com/api/v1/search?q=$1&limit=20&provider=virtualbox&sort=updated" 2> /dev/null | jq -r '.boxes[] | .tag  + "[EOF]" + .short_description + "[EOL]"')
+        # shellcheck disable=SC1003
+        result=$(removeNewline "${result}" | tr -d '#' | tr -d ',' | sed 's/\[EOF\]/,/g' | sed -e 's/\[EOL\]/\'$'\n/g')
         printTable ',' "$(echo 'Tag,Description'; echo "${result}")"
     fi
 }
@@ -860,8 +806,8 @@ vagrant_boxes() {
 
 docker-cleanup() {
     docker system prune -f -a
-    if [[ -n $(docker images -f dangling=true -q) ]]; then
-        docker rmi $(docker images -f dangling=true -q)
+    if [[ -n "$(docker images -f dangling=true -q)" ]]; then
+        docker rmi "$(docker images -f dangling=true -q)"
     fi
     docker volume ls -qf dangling=true | xargs docker volume rm
 }
@@ -895,7 +841,7 @@ k() {
             ;;
         use-context)
             shift
-            command kubectl config use-context $1
+            command kubectl config use-context "$1"
             ;;
         *)
             command kubectl "$@";;
@@ -907,12 +853,12 @@ alias knamespace='kubectl config set-context `kubectl config current-context` --
 alias kcontext='kubectl config current-context'
 
 k-pods() {
-    if [[ " $@ " =~ " -h " ]] || [[ "$@" =~ '--help' ]]; then
+    if [[ " $* " =~ " -h " ]] || [[ "$*" =~ '--help' ]]; then
         echo
         echo 'Usage: k-pods [node_name]'
         echo
     elif [[ -n $1 ]]; then
-        kubectl get pods --all-namespaces -o wide --field-selector=spec.nodeName=$1
+        kubectl get pods --all-namespaces -o wide --field-selector=spec.nodeName="$1"
     else
         kubectl get pods --all-namespaces -o wide --sort-by=.spec.nodeName
     fi
@@ -920,14 +866,14 @@ k-pods() {
 
 k-ssh() {
     pod=$1
-    if [[ " $@ " =~ " -h " ]] || [[ "$@" =~ '--help' ]] || [[ -z "${pod}" ]]; then
+    if [[ " $* " =~ " -h " ]] || [[ "$*" =~ '--help' ]] || [[ -z "${pod}" ]]; then
         echo
         echo 'Usage: k-ssh [-h|--help] <pod_name> [namespace shell]'
         echo
     else
         namespace=${2:-default}
         shell=${3:-bash}
-        kubectl exec -ti ${pod} -n ${namespace} ${shell}
+        kubectl exec -ti "${pod}" -n "${namespace}" "${shell}"
     fi
 }
 
@@ -941,11 +887,11 @@ k-drain-watch() {
         return 1
     fi
     NODE=$1
-    watch -n 1 "kubectl get pods --all-namespaces -o wide --field-selector=spec.nodeName=${NODE} | cut -c-`eval 'tput cols'`"
+    watch -n 1 "kubectl get pods --all-namespaces -o wide --field-selector=spec.nodeName=${NODE} | cut -c-$(eval 'tput cols')"
 }
 
 k-pod-watch() {
-    watch -n 1 "kubectl get pods --all-namespaces -owide --sort-by=.status.startTime | awk '\$6~/^[0-9]{1,2}s$|^[0-4]{0,1}m$/' | awk '{a[i++]=\$0} END {for (j=i-1; j>=0;) print a[j--] }' | cut -c-`eval 'tput cols'`"
+    watch -n 1 "kubectl get pods --all-namespaces -owide --sort-by=.status.startTime | awk '\$6~/^[0-9]{1,2}s$|^[0-4]{0,1}m$/' | awk '{a[i++]=\$0} END {for (j=i-1; j>=0;) print a[j--] }' | cut -c-$(eval 'tput cols')"
 }
 
 #---------------------------------------------------------------------------------------------------#
@@ -954,12 +900,12 @@ k-pod-watch() {
 
 # git aliases
 gitinfo() {
-    pushd . >/dev/null
+    pushd . >/dev/null || return
     # Find base of git directory
-    while [[ ! -d .git ]] && [[ ! `pwd` = "/" ]]; do cd ..; done
+    while [[ ! -d .git ]] && [[ ! "$(pwd)" == "/" ]]; do cd ..; done
     # Show various information about this git directory
     if [ -d .git ]; then
-        echo "== Remote URL: `git remote -v`"
+        echo "== Remote URL: "; git remote -v; echo
         echo "== Remote Branches: "; git branch -r; echo
         echo "== Local Branches:"; git branch; echo
         echo "== Configuration (.git/config)"; cat .git/config; echo
@@ -968,7 +914,7 @@ gitinfo() {
     else
         echo "Not a git repository."
     fi
-    popd >/dev/null
+    popd >/dev/null || return
 }
 
 alias         g='git'
@@ -1048,33 +994,6 @@ gta() {
     fi
 }
 
-# Commits in a specific instance in time
-# See: http://stackoverflow.com/a/3896112/1533054
-gc-time() {
-    if [[ $# -ne 2 ]] ; then
-        echo "invalid arguments"
-        echo "usage: gc-time DATETIME COMMIT_MESSAGE"
-        echo "examples:"
-        echo "   gc-time \"5 days ago\" \"Commit 5 days in the past\""
-        echo "   gc-time \"4 hours\" \"Commit 4 hours in the future\""
-        echo "   gc-time \"Fri Jul 26 19:32:10 2013 -0400\" \"Commit in specific instance in time\""
-        echo ""
-    else
-        if [ "$(get-platform)" == 'linux' ]; then
-            local date="date"
-        elif [ "$(get-platform)" == 'apple' ]; then
-            local date="gdate"
-        fi
-
-        if ($date -d "$1") &>/dev/null; then
-            local gitdate=$($date -d "$1")
-            GIT_AUTHOR_DATE="$gitdate" GIT_COMMITTER_DATE="$gitdate" git commit -m "$2"
-        else
-            gc-time
-        fi
-    fi
-}
-
 # Show git files in conflict
 git-conflicts() {
     git ls-files -u | awk '{print $4}' | sort -u
@@ -1090,17 +1009,18 @@ git-amend() {
         # stash off work
         git stash save -q --keep-index git-amend
         # restore from stash
-        trap 'git stash pop -q stash@{git-amend} 2>/dev/null'
+        trap 'git stash pop -q stash@{git-amend} 2>/dev/null' 2 15
         # go back in history
-        git checkout -q "$TARGET" && {
-        # amend commit
-        git commit -v --amend
-        # apply remaining commits
-        git rebase --onto HEAD "$TARGET" "$BRANCH"
-        } || {
-        echo "git-amend: changes didn't apply cleanly" 1>&2
-        git stash pop -q stash@{git-amend} 2>/dev/null
-        }
+        if git checkout -q "${TARGET}"; then
+            # amend commit
+            git commit -v --amend
+            # apply remaining commits
+            git rebase --onto HEAD "${TARGET}" "${BRANCH}"
+        else
+            echo "git-amend: changes didn't apply cleanly" 1>&2
+            # shellcheck disable=SC1083
+            git stash pop -q stash@{git-amend} 2>/dev/null
+        fi
     fi
 }
 
@@ -1118,12 +1038,12 @@ git-big-object-report() {
     )
     printf "%7s %7s %-7s %-20s\n" SIZE PACK SHA1 LOCATION
     for y in $objects; do
-        size=$((`echo $y | cut -f 5 -d ' '`/1024))
-        pack_size=$((`echo $y | cut -f 6 -d ' '`/1024))
-        sha1=$(echo $y | cut -f 1 -d ' ')
-        short=$(echo "$sha1" |cut -c1-7)
-        path=$(git rev-list --all --objects |grep $sha1 |cut -c42-)
-        printf "%7d %7d %-7s %-20s\n" "$size" "$pack_size" "$short" "$path"
+        size=$(( $(echo "${y}" | cut -f 5 -d ' ') / 1024 ))
+        pack_size=$(( $(echo "${y}" | cut -f 6 -d ' ') / 1024 ))
+        sha1=$(echo "${y}" | cut -f 1 -d ' ')
+        short=$(echo "${sha1}" |cut -c1-7)
+        path=$(git rev-list --all --objects |grep "${sha1}" |cut -c42-)
+        printf "%7d %7d %-7s %-20s\n" "${size}" "${pack_size}" "${short}" "${path}"
     done
     echo "All sizes in KB. PACK = size of compressed object in pack file."
     IFS=$SAVEIFS
@@ -1145,19 +1065,20 @@ git-cut-branch() {
         ref=$(git symbolic-ref -q HEAD)
         sha=$(git rev-parse HEAD)
         if [[ -n "$ref" ]]; then
-            current=$(echo "$ref" | sed 's@^refs/heads/@@')
+            # current=$(echo "$ref" | sed 's@^refs/heads/@@')
+            current=${ref//refs\/heads\//}
             if [[ -n "$current" ]]; then
                 # figure out what branch we're currently tracking
-                remote=$(git config --get "branch.$current.remote" || true)
-                merge=$(git config --get "branch.$current.merge" | sed 's@refs/heads/@@')
+                remote=$(git config --get "branch.${current}.remote" || true)
+                merge=$(git config --get "branch.${current}.merge" | sed 's@refs/heads/@@')
                 tracking=''
                 # build up a sane <remote>/<branch> name
-                if [[ -n "$remote" ]] && [[ -n "$merge" ]]; then
-                    tracking="$remote/$merge"
-                elif [[ -n "$merge" ]]; then
-                    tracking="$merge"
+                if [[ -n "${remote}" ]] && [[ -n "${merge}" ]]; then
+                    tracking="${remote}/${merge}"
+                elif [[ -n "${merge}" ]]; then
+                    tracking="${merge}"
                 else
-                    echo "$current is not tracking anything"
+                    echo "${current} is not tracking anything"
                 fi
 
                 if [[ -n "${tracking}" ]]; then
@@ -1167,13 +1088,13 @@ git-cut-branch() {
                     else
                         # reset the current branch to its tracking branch, create the new branch also
                         # tracking the original branch, and switch to it.
-                        git branch "$branch"
-                        git reset -q --hard "$tracking"
-                        git checkout -q "$branch"
-                        git branch --set-upstream-to="$tracking" "$branch"
+                        git branch "${branch}"
+                        git reset -q --hard "${tracking}"
+                        git checkout -q "${branch}"
+                        git branch --set-upstream-to="${tracking}" "${branch}"
                         git reset -q --hard "$sha"
-                        echo "[$(echo "$sha" | cut -c1-7)...$(echo $(git rev-parse $tracking) | cut -c1-7)] $current"
-                        echo "[0000000...$(echo $(git rev-parse HEAD) | cut -c1-7)] $branch"
+                        echo "[$(echo "${sha}" | cut -c1-7)...$(git rev-parse "${tracking}" | cut -c1-7)] ${current}"
+                        echo "[0000000...$(git rev-parse HEAD | cut -c1-7)] ${branch}"
                     fi
                 fi
             else
@@ -1202,29 +1123,31 @@ git-find-object() {
         # run through each repo dir and write the path
         # to the first one that includes the object
         for dir in "$@"; do
-            (cd "$dir" && git cat-file -e $sha 2>/dev/null) && { echo "$dir"; }
+            (cd "${dir}" && git cat-file -e "${sha}" 2>/dev/null) && { echo "${dir}"; }
         done
     fi
 }
 
 git-ignore() {
-    if [[ -z "${@}" ]]; then
+    if [[ -z "$*" ]]; then
         echo
         echo 'Add a pattern to git ignore'
         echo
         echo 'Usage: git-ignore pattern1 pattern2 . . patternN'
         echo
     else
-        git branch > /dev/null 2> /dev/null && {
-        for pattern in "$@"; do
-            echo "$pattern" | tee -a .git/info/exclude;
-        done
-        } || { echo 'Not a git repo'; }
+        if git branch > /dev/null 2> /dev/null; then
+            for pattern in "$@"; do
+                echo "$pattern" | tee -a .git/info/exclude
+            done
+        else
+            echo 'Not a git repo'
+        fi
     fi
 }
 
 git-grab() {
-    if [[ -z "$@" ]] || [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
+    if [[ -z "$*" ]] || [[ "$*" =~ "--help" ]] || [[ " $* " =~ ' -h ' ]]; then
         echo
         echo 'usage: git-grab username [repo]'
         echo
@@ -1235,11 +1158,11 @@ git-grab() {
         if [ -n "$2" ] ; then
             repo="$2"
         else
-            repo=$(basename $(pwd))
+            repo=$(basename "$(pwd)")
         fi
 
-        git remote add ${username} git://github.com/${username}/${repo}.git
-        git fetch ${username}
+        git remote add "${username}" git://github.com/"${username}"/"${repo}".git
+        git fetch "${username}"
     fi
 }
 
@@ -1264,7 +1187,7 @@ git-ls-object-refs() {
 }
 
 git-prune-merged-branches() {
-    if [[ "$#" -eq 0 ]] || [[ "$@" =~ "--help" ]] || [[ " $@ " =~ ' -h ' ]]; then
+    if [[ "$#" -eq 0 ]] || [[ "$*" =~ "--help" ]] || [[ " $* " =~ ' -h ' ]]; then
         echo
         echo 'Usage: git prune-merged-branches [-h|--help] [-fu] [-r <remote>] <merge-branch>'
         echo
@@ -1322,18 +1245,18 @@ git-prune-merged-branches() {
                 branch_name="${remote}/${branch}"
                 branches=$(
                     git branch --no-color -a --merged "${remote}/${branch}" |
-                    \grep "^..remotes/${remote}/" |
-                    \grep -v "^..remotes/${remote}/${branch}$" |
-                    \grep -v " -> " |
-                    sed 's|^\(..\)remotes/'${remote}'/|\1|'
+                    command -p grep "^..remotes/${remote}/" |
+                    command -p grep -v "^..remotes/${remote}/${branch}$" |
+                    command -p grep -v " -> " |
+                    sed 's|^\(..\)remotes/'"${remote}"'/|\1|'
                 )
             else
                 mode=Local
                 branch_name="${branch}"
                 branches=$(
                     git branch --no-color --merged "${branch}" |
-                    \grep -v "^..${branch}$" |
-                    \grep -v " -> "
+                    command -p grep -v "^..${branch}$" |
+                    command -p grep -v " -> "
                 )
             fi
             # bail out with no branches
@@ -1348,9 +1271,10 @@ git-prune-merged-branches() {
                 else
                     # actually delete the branches via push if remote or via branch -D if local
                     if [[ -n "${remote}" ]]; then
-                        git push origin $(echo "${branches}" | sed 's/^../:/')
+                        # shellcheck disable=SC2001
+                        git push origin "$(echo "${branches}" | sed 's/^../:/')"
                     else
-                        git branch -D $(echo "${branches}" | cut -c3-)
+                        git branch -D "$(echo "${branches}" | cut -c3-)"
                     fi
                 fi
             fi
@@ -1359,14 +1283,14 @@ git-prune-merged-branches() {
 }
 
 git-prune-all() {
-    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]]; then
+    if [[ " $* " =~ ' -h ' ]] || [[ "$*" =~ "--help" ]]; then
         echo
         echo 'Usage: git-pruneall [<remote>...]'
         echo
         echo 'Prune branches from specified remotes, or all remotes when <remote> not specified.'
         echo
     else
-        REMOTES="$@"
+        REMOTES="$*"
         test -z "${REMOTES}" && REMOTES=$(git remote)
         for remote in $REMOTES; do
             echo "Pruning: ${remote}"
@@ -1376,7 +1300,7 @@ git-prune-all() {
 }
 
 git-rel() {
-    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]]; then
+    if [[ " $* " =~ ' -h ' ]] || [[ "$*" =~ "--help" ]]; then
         echo
         echo 'Usage: git-rel [<ref>]'
         echo
@@ -1392,11 +1316,11 @@ git-rel() {
         echo
     else
         current_branch=$(git symbolic-ref -q HEAD | sed 's@refs/heads/@@')
-        remote=$(git config --get branch.${current_branch}.remote)
-        merge=$(git config --get branch.${current_branch}.merge)
-        tracking_branch="${remote}/$(echo ${merge} | sed 's@refs/heads/@@')"
+        remote=$(git config --get branch."${current_branch}".remote)
+        merge=$(git config --get branch."${current_branch}".merge)
+        tracking_branch="${remote}/${merge//refs\/heads\//}"
         ref="${1:-${tracking_branch}}"
-        git rev-list --left-right --abbrev-commit --abbrev $ref...HEAD |
+        git rev-list --left-right --abbrev-commit --abbrev "${ref}"...HEAD |
         cut -c1         |
         sort            |
         uniq -c         |
@@ -1406,49 +1330,49 @@ git-rel() {
 }
 
 git-up() {
-    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]]; then
+    if [[ " $* " =~ ' -h ' ]] || [[ "$*" =~ "--help" ]]; then
         echo
         echo 'Usage: git-up [<pull-args>]'
         echo
         echo 'Like git-pull but show a short log of changes immediately after merging.'
         echo
     else
-        PULL_ARGS="$@"
-        git pull $PULL_ARGS
+        PULL_ARGS="$*"
+        git pull "${PULL_ARGS}"
         echo "Log:"
-        git log --color --pretty=oneline --abbrev-commit HEAD@{1}.. | sed 's/^/  /'
+        git log --color --pretty=oneline --abbrev-commit 'HEAD@{1}'.. | sed 's/^/  /'
     fi
 }
 
 git-reup() {
-    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]]; then
+    if [[ " $* " =~ ' -h ' ]] || [[ "$*" =~ "--help" ]]; then
         echo
         echo 'Usage: git-reup [<pull-args>]'
         echo
         echo 'Like git-pull --rebase but show a short log of changes immediately after rebasing.'
         echo
     else
-        PULL_ARGS="--rebase=true $@"
-        git pull $PULL_ARGS
+        PULL_ARGS="--rebase=true $*"
+        git pull "${PULL_ARGS}"
         echo "Diff:"
-        git --no-pager diff --color --stat HEAD@{1}.. | sed 's/^/ /'
+        git --no-pager diff --color --stat 'HEAD@{1}'.. | sed 's/^/ /'
         echo "Log:"
-        git log --color --pretty=oneline --abbrev-commit HEAD@{1}.. | sed 's/^/  /'
+        git log --color --pretty=oneline --abbrev-commit 'HEAD@{1}'.. | sed 's/^/  /'
     fi
 }
 
 git-del-commit() {
     re='^[0-9]$'
-    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]]; then
+    if [[ " $* " =~ ' -h ' ]] || [[ "$*" =~ "--help" ]]; then
         echo
         echo 'Remove last commits from local repo'
         echo
         echo 'Usage: git-del-commit [-h|--help] [<number_of_commits>]'
         echo
-    elif [[ $1 =~ $re ]]; then
+    elif [[ ${1} =~ ${re} ]]; then
         echo 'Removing the below commits'
-        git log --oneline --max-count=15 | head -$1
-         git reset --soft HEAD~$1
+        git log --oneline --max-count=15 | head -"${1}"
+         git reset --soft HEAD~"${1}"
     else
         echo 'Removing the below commit'
         git log --oneline --max-count=15 | head -1
@@ -1462,7 +1386,7 @@ git-clean-branch() {
 
 git-move-commit() {
     re='^[0-9a-f]{7,}$'
-    if [[ " $@ " =~ ' -h ' ]] || [[ "$@" =~ "--help" ]] || [[ $# -ne 3 ]]; then
+    if [[ " $* " =~ ' -h ' ]] || [[ "$*" =~ "--help" ]] || [[ $# -ne 3 ]]; then
         echo
         echo 'Move commits to a different branch'
         echo 'If only one commit, first and last sha will be same'
@@ -1475,30 +1399,30 @@ git-move-commit() {
         dest_branch=$3
         temp_branch=$(date +%s)
         source_branch=$(git branch 2> /dev/null | sed -e "/^[^*]/d" -e "s/* \(.*\)/\1/")
-        if [[ ! ${first_sha} =~ $re ]]; then
+        if [[ ! ${first_sha} =~ ${re} ]]; then
             echo "${first_sha} doesn't look like a sha..."
             return 1
-        elif [[ ! ${last_sha} =~ $re ]]; then
+        elif [[ ! ${last_sha} =~ ${re} ]]; then
             echo "${last_sha} doesn't look like a sha..."
             return 1
-        elif [[ $(git branch | grep ${dest_branch} | wc -l) -ne 1 ]]; then
+        elif [[ $(git branch | grep -c "${dest_branch}") -ne 1 ]]; then
             echo "branch ${dest_branch} does not exist..."
             return 1
-        elif [[ $(git log --oneline --max-count=15 | grep ${first_sha} | wc -l) -lt 1 ]]; then
+        elif [[ $(git log --oneline --max-count=15 | grep -c "${first_sha}") -lt 1 ]]; then
             echo "Cannot find ${first_sha} in current branch..."
             return 1
-        elif [[ $(git log --oneline --max-count=15 | grep ${last_sha} | wc -l) -lt 1 ]]; then
+        elif [[ $(git log --oneline --max-count=15 | grep -c "${last_sha}") -lt 1 ]]; then
             echo "Cannot find ${last_sha} in current branch..."
             return 1
         elif [[ "${source_branch}" == "${dest_branch}" ]]; then
             echo "Source: ${source_branch} and Destination: ${dest_branch} are same..."
             return 1
         fi
-        git branch ${temp_branch} ${last_sha} && \
-        git rebase -p --onto ${dest_branch} ${first_sha}^ ${temp_branch} && \
-        git checkout ${dest_branch} && \
-        git reset --hard ${temp_branch} && \
-        git branch -d ${temp_branch} && \
-        git rebase -p --onto ${first_sha}^ ${last_sha} ${source_branch}
+        git branch "${temp_branch}" "${last_sha}" && \
+        git rebase -p --onto "${dest_branch}" "${first_sha}^" "${temp_branch}" && \
+        git checkout "${dest_branch}" && \
+        git reset --hard "${temp_branch}" && \
+        git branch -d "${temp_branch}" && \
+        git rebase -p --onto "${first_sha}^" "${last_sha}" "${source_branch}"
     fi
 }

@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 #####################################################################################################
 #                            BASH Configuration 'N' Aliases For Linux                               #
 #####################################################################################################
@@ -7,7 +8,8 @@
 #####################################################################################################
 
 # Bash Auto Completion
-#[ -f /etc/bash_completion ] && . /etc/bash_completion
+# [ -f /etc/bash_completion ] && . /etc/bash_completion
+# shellcheck disable=SC1091
 [ -f /etc/profile.d/bash_completion.sh ] && source /etc/profile.d/bash_completion.sh
 
 #####################################################################################################
@@ -22,7 +24,7 @@ alias lla="ls -lhA"
 alias l="ls -CF"
 alias l.="ls -d .* --color=auto"
 alias lsd="ll | grep '^d'"
-cd() { builtin cd "$@"; ls -lh --color=auto; }
+cd() { builtin cd "$@" || return; ls -lh --color=auto; }
 
 # Memory related
 alias memHogsTop="ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head -20"

@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 #####################################################################################################
 #                            BASH Configuration 'N' Aliases For Mac OS                              #
 #####################################################################################################
@@ -7,6 +8,7 @@
 #####################################################################################################
 
 # Bash Auto Completion
+# shellcheck disable=SC1091
 [ -f /usr/local/etc/bash_completion ] && . /usr/local/etc/bash_completion
 
 # Export sbin path
@@ -67,7 +69,7 @@ alias finderHideHidden='defaults write com.apple.finder ShowAllFiles FALSE'
 #                                      Functions                                                    #
 #####################################################################################################
 
-cd() { builtin cd "$@"; ls -lhG; }
+cd() { builtin cd "$@" || return; ls -lhG; }
 
 brew-cleanup() {
     brew update
@@ -80,7 +82,7 @@ trash() { command mv "$@" ~/.Trash ; }
 
 # ql:     Opens any file in MacOS Quicklook Preview
 ql() {
-    if [[ -z "$@" ]]; then
+    if [[ -z "$*" ]]; then
         echo 'Usage: ql <files>'
     else
         qlmanage -p "$*" >& /dev/null;
@@ -89,10 +91,10 @@ ql() {
 
 # pbcurl: curl url from clipboard
 pbcurl() {
-    if [[ $@ =~ "--help" ]] || [[ $@ =~ "-h" ]]; then
+    if [[ "$*" =~ "--help" ]] || [[ "$*" =~ "-h" ]]; then
         echo 'Usage: pbcurl [-h|--help] [curl_options]'
     else
-        curl -L "$@" $(pbpaste)
+        curl -L "$@" "$(pbpaste)"
     fi
 }
 
@@ -104,7 +106,7 @@ pbindent() {
 
 # pbsed: to sed replace patterns from clipboard text.
 pbsed() {
-    if [[ -z "$@" ]]; then
+    if [[ -z "$*" ]]; then
         echo 'Usage: pbsed [<sed_options>] <sed_pattern>'
     else
         pbpaste | sed "$@" | pbcopy
@@ -112,7 +114,7 @@ pbsed() {
 }
 
 pbclear() {
-	cat /dev/null | pbcopy
+	pbcopy < /dev/null
 }
 
 
@@ -130,11 +132,11 @@ cdf () {
 EOT
     )
     echo "cd to \"$currFolderPath\""
-    cd "$currFolderPath"
+    cd "$currFolderPath" || return
 }
 
 ssh-env() {
-    if [[ -z "$@" ]]; then
+    if [[ -z "$*" ]]; then
         echo
         echo "Setup environment for MacOS's built-in ssh-agent and execute command."
         echo "Useful when crontab commands require ssh-agent access for authentication."
@@ -143,7 +145,7 @@ ssh-env() {
         echo
     else
         SSH_AUTH_SOCK=$(
-            `which lsof` -U |
+            $(command -v lsof) -U |
             grep Listeners    |
             grep ssh-agent    |
             awk '{print $8}'
@@ -159,7 +161,10 @@ pyspark-install() {
     brew update > /dev/null 2>&1
 
     # For Apache Spark
-    if which java > /dev/null; then export JAVA_HOME=$(/usr/libexec/java_home); fi
+    if command -v java > /dev/null; then
+        JAVA_HOME=$(/usr/libexec/java_home)
+        export JAVA_HOME
+    fi
 
     echo "Installing scala..."
     brew install scala > /dev/null 2>&1
@@ -170,7 +175,7 @@ pyspark-install() {
 
     spark_version=$(brew info apache-spark | sed 's|.*stable \([0-9\.]*\).*|\1|' | head -1)
     # For a ipython notebook and pyspark integration
-    if which pyspark > /dev/null; then
+    if command -v pyspark > /dev/null; then
         export SPARK_HOME="/usr/local/Cellar/apache-spark/${spark_version}/libexec"
         export PYTHONPATH=$SPARK_HOME/python:$SPARK_HOME/python/build:$PYTHONPATH
         export PYTHONPATH=$SPARK_HOME/python/lib/pyspark.zip:$SPARK_HOME/python/lib/py4j-0.10.7-src.zip:$PYTHONPATH
