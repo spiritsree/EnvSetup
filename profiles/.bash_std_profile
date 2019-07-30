@@ -94,8 +94,22 @@ parse_kube_context() {
     kubectl config current-context 2> /dev/null | sed -e "s/\(.*\)/(kube: \1)/"
 }
 
+# aws session in prompt
+parse_aws_session() {
+    if [[ -n "${AWS_TARGET_PROFILE}" ]] ; then
+        local time_now
+        local time_left
+        time_now="$(date -u +%s)"
+        time_left="$(((AWS_SESSION_EXPIRATION-time_now)/60))"
+        if [[ "${time_left}" -lt 0 ]] ; then
+            time_left=0
+        fi
+        echo -n "(aws: ${AWS_TARGET_PROFILE} ${time_left}m)"
+    fi
+}
+
 # Command prompt setup
-export PS1="\W \[\033[33m\](${SHLVL})\[\033[00m\]\[\033[96m\]\$(parse_git_branch)\[\033[00m\]\[\033[31m\]\$(parse_kube_context)\[\033[00m\] $ "
+export PS1="\W \[\033[33m\](${SHLVL})\[\033[00m\]\[\033[96m\]\$(parse_git_branch)\[\033[00m\]\[\033[31m\]\$(parse_kube_context)\[\033[00m\]\[\033[92m\]\$(parse_aws_session)\[\033[00m\] $ "
 
 if [[ -n "$INTERACTIVE" ]] && [[ -n "$LOGIN" ]]; then
     uname -npsr
