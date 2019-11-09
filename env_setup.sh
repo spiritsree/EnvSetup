@@ -5,7 +5,7 @@
 ########################################################################################################
 
 # Global Vars
-PKG_INSTALLS_COMMON='bash-completion zsh zsh-completions watch tree git tig screen tmux ruby jq yq python3 pip3 htop yamllint jsonlint shellcheck jid colordiff go'
+PKG_INSTALLS_COMMON='bash-completion zsh zsh-completions watch tree git tig screen tmux ruby jq yq python3 pip3 htop yamllint jsonlint shellcheck jid colordiff go stubby knot'
 PKG_INSTALLS_WORK='docker docker-compose kubernetes-helm kubernetes-cli kops vagrant virtualbox terraform'
 PKG_INSTALLS_PERSONAL='google-chrome utorrent atom sublime-text vlc firefox 4k-video-downloader 4k-stogram 4k-youtube-to-mp3 4k-video-to-mp3 dash'
 PIP_INSTALLS='virtualenv awscli boto3'
@@ -576,11 +576,11 @@ main() {
         pkg='Komodo-Edit'
         regex=${pkg//-/ }
         if [[ $(pkgutil --pkgs | grep -ci "${pkg}") -eq 0 ]] && [[ $(find -E /Applications -maxdepth 1 -regex ".*${regex}.*" | wc -l) -eq 0 ]]; then
-            komodo_string=$(curl http://downloads.activestate.com/Komodo/releases/11.1.0/ 2> /dev/null \
+            komodo_string=$(curl http://downloads.activestate.com/Komodo/releases/11.1.1/ 2> /dev/null \
                           | command -p grep 'Komodo-Edit-' \
                           | command -p grep 'dmg' \
                           | sed -E 's/.*>(Komodo-Edit-.*\.dmg)<.*/\1/')
-            _installDmg "http://downloads.activestate.com/Komodo/releases/11.1.0/${komodo_string}"
+            _installDmg "http://downloads.activestate.com/Komodo/releases/11.1.1/${komodo_string}"
         fi
     fi
 
