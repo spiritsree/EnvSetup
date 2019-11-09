@@ -14,6 +14,9 @@
 # Export sbin path
 export PATH="/usr/local/sbin:$PATH"
 
+# To disable zsh warning as per https://support.apple.com/en-au/HT208050
+export BASH_SILENCE_DEPRECATION_WARNING=1
+
 #####################################################################################################
 #                                      Aliases                                                      #
 #####################################################################################################
