@@ -409,6 +409,9 @@ _profiles() {
                 if [[ -n "${email}" ]]; then
                     git config --global user.email "${email}"
                 fi
+                if [[ "${platform}" != 'MacOS' ]]; then
+                    git config --global core.editor vi
+                fi
             elif [[ -f ~/.gitconfig ]] && [[ "${force}" == 'Y' ]]; then
                 name=$(git config user.name)
                 email=$(git config user.email)
