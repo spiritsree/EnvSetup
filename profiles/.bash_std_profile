@@ -58,14 +58,6 @@ umask 0022
 # we want the various sbins
 PATH="/usr/local/bin:$PATH:/usr/local/sbin:/usr/sbin:/sbin"
 
-# Python env
-export PYENV_ROOT="$HOME/.pyenv"
-export PATH="$PYENV_ROOT/bin:$PATH"
-if command -v pyenv 1>/dev/null 2>&1; then
-    eval "$(pyenv init -)"
-    eval "$(pyenv virtualenv-init -)"
-fi
-
 # TERMCAPINFO for screen
 if [[ -n "$TERMCAP" ]] && [[ "$TERM" =~ "screen" ]]; then
     TERMCAP="${TERMCAP//Co#8/Co#256}"

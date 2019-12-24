@@ -433,22 +433,7 @@ _pkgInstallProcess() {
     platform=$(_getPlatform)
     for package in ${pkgs}; do
         echo "Package ${package}"
-        if [[ "${package}" =~ ^pip[0-9]?$ ]]; then
-            python_bin=$(command -v python)
-            python3_bin=$(command -v python3)
-            if [[ "${platform}" == 'MacOS' ]]; then
-                python_bin=$(command -v python3)
-            fi
-            if [[ -z $(command -v "${package}") ]]; then
-                ((ARG_DEBUG)) && echo 'Installing pip...'
-                curl -O https://bootstrap.pypa.io/get-pip.py 2> /dev/null
-                if [[ "${platform}" == 'MacOS' ]]; then
-                    ${python_bin} get-pip.py > /dev/null 2>&1
-                else
-                    _runAsRoot "${python3_bin}" get-pip.py > /dev/null 2>&1
-                fi
-            fi
-        elif [[ "${package}" =~ helm$ ]] && [[ "${platform}" != 'MacOS' ]]; then
+        if [[ "${package}" =~ helm$ ]] && [[ "${platform}" != 'MacOS' ]]; then
             if [[ -z "$(command -v helm)" ]]; then
                 ((ARG_DEBUG)) && echo '|_ _ Installing helm...'
                 curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get -o get_helm.sh 2> /dev/null
