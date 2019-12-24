@@ -297,10 +297,10 @@ _pipInstall() {
     pip_bin=$(command -v pip3)
     if [[ $(pip3 list 2> /dev/null | command -p grep -ce "^${package}") -eq 0 ]]; then
         if [[ "${platform}" == 'MacOS' ]]; then
-            ((ARG_DEBUG)) && echo "Installing ${package}..."
+            ((ARG_DEBUG)) && echo "|_ _ Installing ${package}..."
             ${pip_bin} install "${package}"
         else
-            ((ARG_DEBUG)) && echo "Installing ${package}..."
+            ((ARG_DEBUG)) && echo "|_ _ Installing ${package}..."
             _runAsRoot "${pip_bin}" install "${package}"
         fi
     fi
@@ -479,7 +479,7 @@ _pkgInstallProcess() {
     local platform
     platform=$(_getPlatform)
     for package in ${pkgs}; do
-        echo "Installing package ${package}"
+        echo "Package ${package}"
         if [[ "${package}" =~ ^pip[0-9]?$ ]]; then
             python_bin=$(command -v python)
             python3_bin=$(command -v python3)
@@ -497,7 +497,7 @@ _pkgInstallProcess() {
             fi
         elif [[ "${package}" =~ helm$ ]] && [[ "${platform}" != 'MacOS' ]]; then
             if [[ -z "$(command -v helm)" ]]; then
-                ((ARG_DEBUG)) && echo 'Installing helm...'
+                ((ARG_DEBUG)) && echo '|_ _ Installing helm...'
                 curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get -o get_helm.sh 2> /dev/null
                 bash get_helm.sh > /dev/null 2>&1
             fi
@@ -507,7 +507,7 @@ _pkgInstallProcess() {
             _pkgInstall "${platform}" "kubectl" "${pkg_installer}"
         elif [[ "${package}" == "terraform" ]] && [[ "${platform}" != 'MacOS' ]]; then
             if [[ -z "$(command -v terraform)" ]]; then
-                ((ARG_DEBUG)) && echo 'Installing terraform...'
+                ((ARG_DEBUG)) && echo '|_ _ Installing terraform...'
                 terraform_version=$(curl -s https://checkpoint-api.hashicorp.com/v1/check/terraform 2> /dev/null | jq -r -M '.current_version')
                 curl -s "https://releases.hashicorp.com/terraform/${terraform_version}/terraform_${terraform_version}_linux_amd64.zip" -o /tmp/terraform_linux_amd64.zip 2> /dev/null
                 unzip_bin=$(command -v unzip)
@@ -568,7 +568,7 @@ main() {
     fi
 
     for pip_package in ${PIP_INSTALLS}; do
-        echo "Installing package ${pip_package}"
+        echo "Package ${pip_package}"
         _pipInstall "${platform}" "${pip_package}" > /dev/null
     done
 
@@ -606,4 +606,5 @@ main "$@"
 # jid: https://github.com/simeji/jid
 # Bash Cheatsheet: https://devhints.io/bash
 # hub: https://github.com/github/hub
+# stubby: https://dnsprivacy.org/wiki/pages/viewpage.action?pageId=3145812
 
