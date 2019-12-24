@@ -1431,3 +1431,14 @@ git-move-commit() {
         git rebase -p --onto "${first_sha}^" "${last_sha}" "${source_branch}"
     fi
 }
+
+git-amend-email() {
+    echo "Commit..."
+    echo '      git commit --author="First Last <first.last@example.com>"'
+    echo "Last Commit..."
+    echo '      git commit --amend --author="First Last <first.last@example.com>"'
+    echo "Previous Commit..."
+    echo '      git rebase -i -p <commit-sha>'
+    echo '      git commit --amend --author="First Last <first.last@example.com>" --no-edit'
+    echo '      git rebase --continue'
+}

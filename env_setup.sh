@@ -5,10 +5,10 @@
 ########################################################################################################
 
 # Global Vars
-PKG_INSTALLS_COMMON='bash-completion zsh zsh-completions watch tree git tig screen tmux ruby jq yq python3 pip3 htop yamllint jsonlint shellcheck jid colordiff go stubby knot'
+PKG_INSTALLS_COMMON='bash-completion zsh zsh-completions watch tree git tig screen tmux ruby jq yq python3 pip3 htop yamllint jsonlint shellcheck jid colordiff go stubby knot hub'
 PKG_INSTALLS_WORK='docker docker-compose kubernetes-helm kubernetes-cli kops vagrant virtualbox terraform'
 PKG_INSTALLS_PERSONAL='google-chrome utorrent atom sublime-text vlc firefox 4k-video-downloader 4k-stogram 4k-youtube-to-mp3 4k-video-to-mp3 dash'
-PIP_INSTALLS='virtualenv awscli boto3'
+PIP_INSTALLS='virtualenv awscli boto3 pylint'
 APP_PROFILES='.vimrc .gvimrc .tmux.conf .tmux-osx.conf .gemrc .tigrc .screenrc .irbrc .inputrc .gitconfig .gitignore .yamllint'
 
 PROFILES_DIR="./profiles"
@@ -297,10 +297,10 @@ _pipInstall() {
     pip_bin=$(command -v pip3)
     if [[ $(pip3 list 2> /dev/null | command -p grep -ce "^${package}") -eq 0 ]]; then
         if [[ "${platform}" == 'MacOS' ]]; then
-            ((ARG_DEBUG)) && echo "Installing ${package}..."
+            ((ARG_DEBUG)) && echo "|_ _ Installing ${package}..."
             ${pip_bin} install "${package}"
         else
-            ((ARG_DEBUG)) && echo "Installing ${package}..."
+            ((ARG_DEBUG)) && echo "|_ _ Installing ${package}..."
             _runAsRoot "${pip_bin}" install "${package}"
         fi
     fi
@@ -409,6 +409,9 @@ _profiles() {
                 if [[ -n "${email}" ]]; then
                     git config --global user.email "${email}"
                 fi
+                if [[ "${platform}" != 'MacOS' ]]; then
+                    git config --global core.editor vi
+                fi
             elif [[ -f ~/.gitconfig ]] && [[ "${force}" == 'Y' ]]; then
                 name=$(git config user.name)
                 email=$(git config user.email)
@@ -479,7 +482,7 @@ _pkgInstallProcess() {
     local platform
     platform=$(_getPlatform)
     for package in ${pkgs}; do
-        echo "Installing package ${package}"
+        echo "Package ${package}"
         if [[ "${package}" =~ ^pip[0-9]?$ ]]; then
             python_bin=$(command -v python)
             python3_bin=$(command -v python3)
@@ -497,7 +500,7 @@ _pkgInstallProcess() {
             fi
         elif [[ "${package}" =~ helm$ ]] && [[ "${platform}" != 'MacOS' ]]; then
             if [[ -z "$(command -v helm)" ]]; then
-                ((ARG_DEBUG)) && echo 'Installing helm...'
+                ((ARG_DEBUG)) && echo '|_ _ Installing helm...'
                 curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get -o get_helm.sh 2> /dev/null
                 bash get_helm.sh > /dev/null 2>&1
             fi
@@ -507,7 +510,7 @@ _pkgInstallProcess() {
             _pkgInstall "${platform}" "kubectl" "${pkg_installer}"
         elif [[ "${package}" == "terraform" ]] && [[ "${platform}" != 'MacOS' ]]; then
             if [[ -z "$(command -v terraform)" ]]; then
-                ((ARG_DEBUG)) && echo 'Installing terraform...'
+                ((ARG_DEBUG)) && echo '|_ _ Installing terraform...'
                 terraform_version=$(curl -s https://checkpoint-api.hashicorp.com/v1/check/terraform 2> /dev/null | jq -r -M '.current_version')
                 curl -s "https://releases.hashicorp.com/terraform/${terraform_version}/terraform_${terraform_version}_linux_amd64.zip" -o /tmp/terraform_linux_amd64.zip 2> /dev/null
                 unzip_bin=$(command -v unzip)
@@ -520,7 +523,7 @@ _pkgInstallProcess() {
             fi
         elif [[ "${package}" == 'kops' ]] && [[ "${platform}" != 'MacOS' ]]; then
             if [[ -z "$(command -v kops)" ]]; then
-                ((ARG_DEBUG)) && echo 'Installing kops...'
+                ((ARG_DEBUG)) && echo '|_ _ Installing kops...'
                 kops_version="$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)"
                 if [[ -n "${kops_version}" ]]; then
                     wget -O kops https://github.com/kubernetes/kops/releases/download/"${kops_version}"/kops-linux-amd64 2> /dev/null
@@ -568,7 +571,7 @@ main() {
     fi
 
     for pip_package in ${PIP_INSTALLS}; do
-        echo "Installing package ${pip_package}"
+        echo "Package ${pip_package}"
         _pipInstall "${platform}" "${pip_package}" > /dev/null
     done
 
@@ -594,15 +597,5 @@ main() {
 
 main "$@"
 
-# Reference:
-# Bash colour coding:  https://misc.flogisoft.com/bash/tip_colors_and_formatting
-# jq:  https://github.com/stedolan/jq.git
-# jq: https://jqplay.org/
-# yq: https://yq.readthedocs.io/en/latest/
-# yq: https://github.com/mikefarah/yq
-# kubectl: curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/darwin/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin
-# kops: wget -O kops https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)/kops-linux-amd64 && chmod +x ./kops && sudo mv ./kops /usr/local/bin/
-# zsh: https://ohmyz.sh/
-# jid: https://github.com/simeji/jid
-# Bash Cheatsheet: https://devhints.io/bash
-
+# Kubectl: curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/darwin/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin
+# Kops: wget -O kops https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)/kops-linux-amd64 && chmod +x ./kops && sudo mv ./kops /usr/local/bin/
