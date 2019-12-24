@@ -13,6 +13,7 @@ APP_PROFILES='.vimrc .gvimrc .tmux.conf .tmux-osx.conf .gemrc .tigrc .screenrc .
 
 PROFILES_DIR="./profiles"
 THEMES_DIR="./themes"
+SOURCE_SCRIPTS="./source-scripts"
 BIN_DIR="./bin"
 ARG_DEBUG=0
 ARG_FORCE=0
@@ -162,67 +163,16 @@ _ask() {
 # This function cannot have anything to print to stdout
 _baseSetup() {
     local platform=$1
+    source "${SOURCE_SCRIPTS}/${platform}_base.sh"
+    _env_base_setup_os
     if [[ "${platform}" == 'MacOS' ]]; then
-        # Ruby (MAC comes with ruby by default)
-        ruby_bin=$(command -v ruby)
-        if [[ -z "${ruby_bin}" ]]; then
-            echo "Ruby is not installed."
-            exit
-        fi
-
-        # Homebrew install
-        # Refer: https://brew.sh/
         pkg_installer=$(command -v brew)
-        if [[ -z "${pkg_installer}" ]] ; then
-            "${ruby_bin}" -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-        else
-            "${pkg_installer}" update > /dev/null
-            "${pkg_installer}" upgrade > /dev/null
-        fi
-        echo "${pkg_installer}"
     elif [[ "${platform}" == 'Ubuntu' ]]; then
-        lsb_release=$(command -p lsb_release -r -s)
         pkg_installer=$(command -v apt-get)
-        _pkgInstall "${platform}" "apt-transport-https" "${pkg_installer}" > /dev/null
-        # adding google cloud key to apt
-        google_key=$(mktemp /tmp/google_key.XXXXXXXXXX)
-        curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg -o "${google_key}" > /dev/null 2>&1
-        # shellcheck disable=SC2034
-        apt_status=$(_runAsRoot apt-key add "${google_key}" 2> /dev/null)
-        unlink "${google_key}"
-        _runAsRoot add-apt-repository -y ppa:rmescandon/yq > /dev/null 2>&1
-        _runAsRoot touch /etc/apt/sources.list.d/kubernetes.list
-        # shellcheck disable=SC2034
-        tee_out=$(_runAsRoot echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' | tee /etc/apt/sources.list.d/kubernetes.list)
-        if [[ -n "${lsb_release}" ]]; then
-            zsh_key=$(mktemp /tmp/zsh_key.XXXXXXXXXX)
-            wget -q "https://download.opensuse.org/repositories/shells:zsh-users:zsh-completions/xUbuntu_${lsb_release}/Release.key" -O "${zsh_key}" 2> /dev/null
-            # shellcheck disable=SC2034
-            apt_status=$(_runAsRoot apt-key add "${zsh_key}" 2> /dev/null)
-            unlink "${zsh_key}"
-            # shellcheck disable=SC2034
-            tee_out=$(_runAsRoot echo "deb http://download.opensuse.org/repositories/shells:/zsh-users:/zsh-completions/xUbuntu_${lsb_release}/ /" | tee /etc/apt/sources.list.d/zsh-completions.list)
-        fi
-        _runAsRoot "${pkg_installer}" update -y > /dev/null 2>&1
-        # python3-distutils required by get-pip.py
-        _runAsRoot "${pkg_installer}" install python3-distutils -y > /dev/null 2>&1
-        echo "${pkg_installer}"
     elif [[ "${platform}" == 'Linux' ]]; then
         pkg_installer=$(command -v yum)
-        _runAsRoot dd of=/etc/yum.repos.d/kubernetes.repo  2> /dev/null <<EOF
-[kubernetes]
-name=Kubernetes
-baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
-enabled=1
-gpgcheck=1
-repo_gpgcheck=1
-gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
-EOF
-        _runAsRoot "${pkg_installer}" update -y > /dev/null 2>&1
-        _pkgInstall "${platform}" "vim-enhanced" "${pkg_installer}"
-        _pkgInstall "${platform}" "epel-release" "${pkg_installer}"
-        echo "${pkg_installer}"
     fi
+    echo "${pkg_installer}"
 }
 
 # Install DMG
