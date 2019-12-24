@@ -8,7 +8,7 @@
 PKG_INSTALLS_COMMON='bash-completion zsh zsh-completions watch tree git tig screen tmux ruby jq yq python3 pip3 htop yamllint jsonlint shellcheck jid colordiff go stubby knot hub'
 PKG_INSTALLS_WORK='docker docker-compose kubernetes-helm kubernetes-cli kops vagrant virtualbox terraform'
 PKG_INSTALLS_PERSONAL='google-chrome utorrent atom sublime-text vlc firefox 4k-video-downloader 4k-stogram 4k-youtube-to-mp3 4k-video-to-mp3 dash'
-PIP_INSTALLS='virtualenv awscli boto3'
+PIP_INSTALLS='virtualenv awscli boto3 pylint'
 APP_PROFILES='.vimrc .gvimrc .tmux.conf .tmux-osx.conf .gemrc .tigrc .screenrc .irbrc .inputrc .gitconfig .gitignore .yamllint'
 
 PROFILES_DIR="./profiles"
@@ -520,7 +520,7 @@ _pkgInstallProcess() {
             fi
         elif [[ "${package}" == 'kops' ]] && [[ "${platform}" != 'MacOS' ]]; then
             if [[ -z "$(command -v kops)" ]]; then
-                ((ARG_DEBUG)) && echo 'Installing kops...'
+                ((ARG_DEBUG)) && echo '|_ _ Installing kops...'
                 kops_version="$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)"
                 if [[ -n "${kops_version}" ]]; then
                     wget -O kops https://github.com/kubernetes/kops/releases/download/"${kops_version}"/kops-linux-amd64 2> /dev/null
@@ -594,17 +594,5 @@ main() {
 
 main "$@"
 
-# Reference:
-# Bash colour coding:  https://misc.flogisoft.com/bash/tip_colors_and_formatting
-# jq:  https://github.com/stedolan/jq.git
-# jq: https://jqplay.org/
-# yq: https://yq.readthedocs.io/en/latest/
-# yq: https://github.com/mikefarah/yq
-# kubectl: curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/darwin/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin
-# kops: wget -O kops https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)/kops-linux-amd64 && chmod +x ./kops && sudo mv ./kops /usr/local/bin/
-# zsh: https://ohmyz.sh/
-# jid: https://github.com/simeji/jid
-# Bash Cheatsheet: https://devhints.io/bash
-# hub: https://github.com/github/hub
-# stubby: https://dnsprivacy.org/wiki/pages/viewpage.action?pageId=3145812
-
+# Kubectl: curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/darwin/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin
+# Kops: wget -O kops https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)/kops-linux-amd64 && chmod +x ./kops && sudo mv ./kops /usr/local/bin/
