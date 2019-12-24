@@ -5,7 +5,7 @@
 ########################################################################################################
 
 # Global Vars
-PKG_INSTALLS_COMMON='bash-completion zsh zsh-completions watch tree git tig screen tmux ruby jq yq python3 pip3 htop yamllint jsonlint shellcheck jid colordiff go stubby knot hub'
+PKG_INSTALLS_COMMON='bash-completion zsh zsh-completions watch tree git tig screen tmux ruby jq yq htop yamllint jsonlint shellcheck jid colordiff go stubby knot hub'
 PKG_INSTALLS_WORK='docker docker-compose kubernetes-helm kubernetes-cli kops vagrant virtualbox terraform'
 PKG_INSTALLS_PERSONAL='google-chrome utorrent atom sublime-text vlc firefox 4k-video-downloader 4k-stogram 4k-youtube-to-mp3 4k-video-to-mp3 dash'
 PIP_INSTALLS='virtualenv awscli boto3 pylint'
@@ -164,7 +164,7 @@ _ask() {
 _baseSetup() {
     local platform=$1
     source "${SOURCE_SCRIPTS}/${platform}_base.sh"
-    _env_base_setup_os
+    _env_base_setup_os > /dev/null 2>&1
     if [[ "${platform}" == 'MacOS' ]]; then
         pkg_installer=$(command -v brew)
     elif [[ "${platform}" == 'Ubuntu' ]]; then

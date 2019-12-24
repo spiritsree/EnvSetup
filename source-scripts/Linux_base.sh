@@ -10,6 +10,22 @@ repo_gpgcheck=1
 gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
 EOF
     sudo "${pkg_installer}" update -y > /dev/null 2>&1
-    "${pkg_installer}" vim-enhanced -y > /dev/null 2>&1
-    "${pkg_installer}" epel-release -y > /dev/null 2>&1
+    sudo "${pkg_installer}" install vim-enhanced -y > /dev/null 2>&1
+    sudo "${pkg_installer}" install epel-release -y > /dev/null 2>&1
+
+    # Python installation
+    sudo "${pkg_installer}" install @development zlib-devel bzip2 bzip2-devel readline-devel sqlite \
+                                    sqlite-devel openssl-devel xz xz-devel libffi-devel findutils > /dev/null 2>&1
+    curl https://pyenv.run 2> /dev/null | bash 2> /dev/null
+    export PYENV_ROOT="$HOME/.pyenv"
+    export PATH="$PYENV_ROOT/bin:$PATH"
+    if command -v pyenv 1>/dev/null 2>&1; then
+        eval "$(pyenv init -)"
+        eval "$(pyenv virtualenv-init -)"
+    fi
+    local python_version=$(pyenv install --list | awk '{ print $1 }' | grep -E '^3.7' | tail -1)
+    if [[ -n "${python_version}" ]]; then
+        pyenv install "${python_version}" > /dev/null 2>&1
+        pyenv global "${python_version}"
+    fi
 }

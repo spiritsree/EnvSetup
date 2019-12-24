@@ -16,5 +16,17 @@ _env_base_setup_os() {
     fi
 
     # Python install
-
+    "${pkg_installer}" install readline xz > /dev/null 2>&1
+    "${pkg_installer}" install pyenv > /dev/null 2>&1
+    export PYENV_ROOT="$HOME/.pyenv"
+    export PATH="$PYENV_ROOT/bin:$PATH"
+    if command -v pyenv 1>/dev/null 2>&1; then
+        eval "$(pyenv init -)"
+        eval "$(pyenv virtualenv-init -)"
+    fi
+    local python_version=$(pyenv install --list | awk '{ print $1 }' | grep -E '^3.7' | tail -1)
+    if [[ -n "${python_version}" ]]; then
+        pyenv install "${python_version}" > /dev/null 2>&1
+        pyenv global "${python_version}"
+    fi
 }
