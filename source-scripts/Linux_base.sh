@@ -31,4 +31,5 @@ EOF
     sudo "${pkg_installer}" install python3 -y > /dev/null 2>&1
     curl -O https://bootstrap.pypa.io/get-pip.py 2> /dev/null
     sudo python3 get-pip.py > /dev/null 2>&1
+    pip3 install --upgrade pip > /dev/null 2>&1
 }

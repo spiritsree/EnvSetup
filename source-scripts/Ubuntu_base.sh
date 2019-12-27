@@ -47,4 +47,5 @@ _env_base_setup_os() {
     #     pyenv global "${python_version}"
     # fi
     sudo apt-get install -y python3 python3-pip  > /dev/null 2>&1
+    pip3 install --upgrade pip > /dev/null 2>&1
 }
