@@ -167,13 +167,15 @@ ssh-env() {
 }
 
 pyspark-install() {
-    # Tested on Apache Spark 2.1.0, Python 2.7.13 and Java 1.8.0_112
+    # Tested on Apache Spark 2.4.4, Python 3.7.5 and Java 1.8.0_112
 
     brew update > /dev/null 2>&1
 
     # For Apache Spark
     if command -v java > /dev/null; then
-        JAVA_HOME=$(/usr/libexec/java_home)
+        # Other versions will give the following error
+        # Unsupported class file major version 55
+        JAVA_HOME=$(/usr/libexec/java_home -v 1.8)
         export JAVA_HOME
     fi
 
