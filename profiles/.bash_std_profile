@@ -193,6 +193,17 @@ colors() {
 alias myip="dig +short myip.opendns.com @resolver1.opendns.com"   # curl icanhazip.com
 alias mylocalip="ifconfig | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p'"
 alias location="curl ipinfo.io 2> /dev/null | jq ."
+ipfind() {
+    if [[ -z "$*" ]]; then
+        echo
+        echo 'Find location of given IP. Alternatively you can use https://ipfind.com/'
+        echo
+        echo 'Usage: lgrep <ip>'
+        echo
+    else
+        curl "https://www.iplocate.io/api/lookup/$1" 2> /dev/null | jq .
+    fi
+}
 
 # grep aliases
 alias grep='grep --color=always'

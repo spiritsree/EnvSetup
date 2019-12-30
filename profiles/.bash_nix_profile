@@ -58,3 +58,48 @@ skaffold-run() {
         skaffold run
     fi
 }
+
+# GPG Keygen
+gpg-keygen() {
+    if [[ $# -ne 2 ]]; then
+        echo
+        echo 'Usage: gpg-keygen "<Name>" "<email>"'
+        echo
+    else
+        if ! $(command -v rngd > /dev/null 2>&1) ; then
+            sudo apt-get install -y rng-tools > /dev/null 2>&1
+        fi
+        sudo rngd -r /dev/urandom
+        if [[ ! -d "${HOME}/.gnupg" ]]; then
+            mkdir "${HOME}/.gnupg" > /dev/null 2>&1
+        fi
+        local gpg_gen_file=$(mktemp /tmp/gpg.XXXXXXXX)
+        cat << EOF > "${gpg_gen_file}"
+%echo Generating a GPG key, might take a while
+Key-Type: RSA
+Key-Length: 2048
+Subkey-Type: RSA
+Subkey-Length: 2048
+Name-Real: $1
+Name-Comment: $1 GPG Signing
+Name-Email: $2
+Expire-Date: 0
+%pubring $HOME/.gnupg/gpg_key.pub
+%secring $HOME/.gnupg/gpg_key.sec
+%commit
+%echo done
+EOF
+    gpg --batch --gen-key "${gpg_gen_file}"
+    unlink "${gpg_gen_file}"
+    echo "=============== GPG Key =================="
+    gpg --no-default-keyring --armor \
+        --secret-keyring "${HOME}/.gnupg/gpg_key.sec" \
+        --keyring "${HOME}/.gnupg/gpg_key.pub" \
+        --export $2
+    echo "=============== GPG Key Secret =================="
+    gpg --no-default-keyring --armor \
+        --secret-keyring "${HOME}/.gnupg/gpg_key.sec" \
+        --keyring "${HOME}/.gnupg/gpg_key.pub" \
+        --export-secret-key $2
+    fi
+}
