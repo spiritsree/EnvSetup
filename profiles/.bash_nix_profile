@@ -65,11 +65,14 @@ gpg-keygen() {
         echo
         echo 'Usage: gpg-keygen "<Name>" "<email>"'
         echo
+    elif [[ $(gpg --list-keys | grep $2 | wc -l) -gt 0 ]]; then
+        echo "GPG Key exist for email $2"
     else
         if ! $(command -v rngd > /dev/null 2>&1) ; then
             sudo apt-get install -y rng-tools > /dev/null 2>&1
         fi
-        sudo rngd -r /dev/urandom
+        sudo rngd -q -r /dev/urandom
+        local rngd_pid=$(ps aux | command grep [r]ngd | awk '{ print $2 }')
         if [[ ! -d "${HOME}/.gnupg" ]]; then
             mkdir "${HOME}/.gnupg" > /dev/null 2>&1
         fi
@@ -89,17 +92,20 @@ Expire-Date: 0
 %commit
 %echo done
 EOF
-    gpg --batch --gen-key "${gpg_gen_file}"
-    unlink "${gpg_gen_file}"
-    echo "=============== GPG Key =================="
-    gpg --no-default-keyring --armor \
-        --secret-keyring "${HOME}/.gnupg/gpg_key.sec" \
-        --keyring "${HOME}/.gnupg/gpg_key.pub" \
-        --export $2
-    echo "=============== GPG Key Secret =================="
-    gpg --no-default-keyring --armor \
-        --secret-keyring "${HOME}/.gnupg/gpg_key.sec" \
-        --keyring "${HOME}/.gnupg/gpg_key.pub" \
-        --export-secret-key $2
+        gpg --batch --gen-key "${gpg_gen_file}"
+        unlink "${gpg_gen_file}"
+        echo "=============== GPG Key =================="
+        gpg --no-default-keyring --armor \
+            --secret-keyring "${HOME}/.gnupg/gpg_key.sec" \
+            --keyring "${HOME}/.gnupg/gpg_key.pub" \
+            --export $2
+        echo "=============== GPG Key Secret =================="
+        gpg --no-default-keyring --armor \
+            --secret-keyring "${HOME}/.gnupg/gpg_key.sec" \
+            --keyring "${HOME}/.gnupg/gpg_key.pub" \
+            --export-secret-key $2
+        if [[ -n "${rngd_pid}" ]]; then
+            sudo kill -9 "${rngd_pid}"
+        fi
     fi
 }
