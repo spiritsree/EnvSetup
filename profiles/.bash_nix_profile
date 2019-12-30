@@ -45,3 +45,16 @@ alias tsocks="sudo ss -l -t"   		# open TCP sockets
 # Network related
 alias ifinfo="ip a"
 alias listen="sudo netstat -plnt"	# listening connections
+
+# Skaffold Run
+# https://skaffold.dev/docs/install/
+skaffold-run() {
+    if $(command -v skaffold > /dev/null 2>&1); then
+        skaffold run
+    else
+        curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64 2> /dev/null
+        chmod +x skaffold
+        sudo mv skaffold /usr/local/bin
+        skaffold run
+    fi
+}

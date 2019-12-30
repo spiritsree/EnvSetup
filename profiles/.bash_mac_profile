@@ -208,3 +208,16 @@ kubeval-install() {
     brew tap garethr/kubeval > /dev/null 2>&1
     brew install kubeval > /dev/null 2>&1
 }
+
+# Skaffold Run
+# https://skaffold.dev/docs/install/
+skaffold-run() {
+    if $(command -v skaffold > /dev/null 2>&1); then
+        skaffold run
+    else
+        curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-darwin-amd64 2> /dev/null
+        chmod +x skaffold
+        sudo mv skaffold /usr/local/bin
+        skaffold run
+    fi
+}
