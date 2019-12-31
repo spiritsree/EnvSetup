@@ -1532,3 +1532,12 @@ git-ssh-setup() {
         fi
     fi
 }
+
+cloudflare-dns-test() {
+    kdig_bin=$(command -v kdig)
+    if [[ -n "${kdig_bin}" ]]; then
+        "${kdig_bin}" -d @1.1.1.1 +tls-ca +tls-host=cloudflare-dns.com  example.com
+    else
+        echo "kdig binary not found..."
+    fi
+}

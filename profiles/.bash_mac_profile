@@ -221,3 +221,26 @@ skaffold-run() {
         skaffold run
     fi
 }
+
+# Stubby
+stubby-dns() {
+    # Use stubby DNS
+    if [[ $(ps aux | grep [s]tubby | wc -l) -eq 0 ]]; then
+        echo 'Stubby service not running...''
+        echo 'Please start stubby and try again...'
+    elif $(dig +short +time=5 @127.0.0.1 www.example.com > /dev/null 2>&1); then
+        sudo /usr/local/opt/stubby/sbin/stubby-setdns-macos.sh -r > /dev/null 2>&1
+        echo 'Switched to stubby DNS...'
+    else
+        echo 'Stubby resoultion not working...'
+        echo 'Please fix it and try again...'
+    fi
+}
+
+stubby-dns-revert() {
+    # Revert to normal ISP DNS
+    sudo /usr/local/opt/stubby/sbin/stubby-setdns-macos.sh -r > /dev/null 2>&1
+    if $(dig +short +time=5 www.example.com > /dev/null 2>&1); then
+        echo 'Successfully reverted normal DNS...'
+    fi
+}

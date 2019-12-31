@@ -163,7 +163,6 @@ _ask() {
 # This function cannot have anything to print to stdout
 _baseSetup() {
     local platform=$1
-    source "${SOURCE_SCRIPTS}/${platform}_base.sh"
     _env_base_setup_os > /dev/null 2>&1
     if [[ "${platform}" == 'MacOS' ]]; then
         pkg_installer=$(command -v brew)
@@ -402,6 +401,14 @@ _profiles() {
             fi
         fi
 
+        # Sublime symlink
+        if [[ -f /Applications/Sublime\ Text.app/Contents/SharedSupport/bin/subl ]]; then
+            if [[ ! -f /usr/local/bin/sublime ]]; then
+                ((ARG_DEBUG)) && echo 'Creating symlink for sublime..'
+                ln -s /Applications/Sublime\ Text.app/Contents/SharedSupport/bin/subl /usr/local/bin/sublime
+            fi
+        fi
+
         # Copy Terminal and iTerm2 profile
         if [[ -d ~/Library/Preferences ]]; then
             if [[ ! -f ~/Library/Preferences/com.apple.Terminal.plist ]] || [[ "${force}" == 'Y' ]]; then
@@ -482,6 +489,9 @@ main() {
     platform=$(_getPlatform)
     pkg_installer=''
 
+    # Loading platform specific source routines
+    source "${SOURCE_SCRIPTS}/${platform}_base.sh"
+
     pkg_installer=$(_baseSetup "${platform}")
     ((ARG_DEBUG)) && echo "Package installer is ${pkg_installer}"
 
@@ -509,6 +519,10 @@ main() {
         echo "Package ${pip_package}"
         _pipInstall "${platform}" "${pip_package}" > /dev/null
     done
+
+    # Setting up secure DNS
+    ((ARG_DEBUG)) && echo "Setting up secure DNS"
+    _secure_dns_setup
 
     if [[ "${platform}" == 'MacOS' ]]; then
         pkg='Komodo-Edit'
