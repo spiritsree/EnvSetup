@@ -223,13 +223,15 @@ _pkgInstall() {
         if ! rpm -qa | grep -qw "${package}"; then
             ((ARG_DEBUG)) && echo "|_ _ Installing ${package}..."
             if ! _runAsRoot "${pkg_installer}" install "${package}" -y > /dev/null 2>&1; then
-                new_package=$(yum search "${package}" | grep -e "^${package}[0-9]\." | awk -F'.' '{ print $1 }' | sort -nr | head -1)
-                ((ARG_DEBUG)) && echo "|_ _ Installing ${new_package}..."
-                _runAsRoot "${pkg_installer}" install "${new_package}" -y > /dev/null 2>&1
-                pkg_bin=$(command -v "${new_package}")
-                if [[ -z "${pkg_bin}" ]]; then
-                    ((ARG_DEBUG)) && echo "|_ _ Installing ${package}..."
-                    _runAsRoot ln -s "${pkg_bin}" "/usr/bin/${package}"
+                new_package=$(yum search "${package}"  2> /dev/null | grep -e "^${package}[0-9]\." | awk -F'.' '{ print $1 }' | sort -nr | head -1)
+                if [[ -n "${new_package}" ]]; then
+                    ((ARG_DEBUG)) && echo "|_ _ Installing ${new_package}..."
+                    _runAsRoot "${pkg_installer}" install "${new_package}" -y > /dev/null 2>&1
+                    pkg_bin=$(command -v "${new_package}")
+                    if [[ -n "${pkg_bin}" ]]; then
+                        ((ARG_DEBUG)) && echo "|_ _ Linking binary ${package}..."
+                        _runAsRoot ln -s "${pkg_bin}" "/usr/bin/${package}"
+                    fi
                 fi
             fi
         fi
