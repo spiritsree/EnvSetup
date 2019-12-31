@@ -220,7 +220,7 @@ _pkgInstall() {
                                                 _runAsRoot "${pkg_installer}" install "${package}" -y > /dev/null 2>&1;
                                                 }
     elif [[ "${platform}" == 'Linux' ]]; then
-        if ! rpm -qa | grep -qw "${package}"; then
+        if ! rpm -qa | grep -qw "${package}" && ! command -v "${package}" > /dev/null  2>&1; then
             ((ARG_DEBUG)) && echo "|_ _ Installing ${package}..."
             if ! _runAsRoot "${pkg_installer}" install "${package}" -y > /dev/null 2>&1; then
                 new_package=$(yum search "${package}"  2> /dev/null | grep -e "^${package}[0-9]\." | awk -F'.' '{ print $1 }' | sort -nr | head -1)
