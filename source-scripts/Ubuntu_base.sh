@@ -1,7 +1,7 @@
 _env_base_setup_os() {
     local lsb_release=$(command -p lsb_release -r -s)
     local pkg_installer=$(command -v apt-get)
-    "${pkg_installer}" install apt-transport-https -y > /dev/null 2>&1;
+    "${pkg_installer}" install apt-transport-https curl wget -y > /dev/null 2>&1;
 
     # adding google cloud key to apt
     google_key=$(mktemp /tmp/google_key.XXXXXXXXXX)
