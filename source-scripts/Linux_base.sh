@@ -33,3 +33,8 @@ EOF
     sudo python3 get-pip.py > /dev/null 2>&1
     pip3 install --upgrade pip > /dev/null 2>&1
 }
+
+_secure_dns_setup() {
+    local stubby_config="/etc/stubby.yml"
+    echo "Follow this steps https://dnsprivacy.org/wiki/pages/viewpage.action?pageId=3145786"
+}
