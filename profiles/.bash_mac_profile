@@ -45,7 +45,7 @@ alias l.="ls -dG .*"
 alias lsd="ll | grep '^d'"
 
 #ipinfo
-alias ipinfo="echo -e \ - Public facing IP Address: ; curl ipecho.net/plain ; echo ; echo -e \ - Internal IP Address: ;  ipconfig getifaddr en0"
+alias ipinfo="echo -ne \ - Public facing IP Address:\ ; curl ipecho.net/plain ; echo ; echo -ne \ - Internal IP Address:\ ;  ipconfig getifaddr en0"
 
 # finder
 alias fopen="open -a Finder ./"
