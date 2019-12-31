@@ -57,8 +57,3 @@ _secure_dns_setup() {
         sudo /usr/local/opt/stubby/sbin/stubby-setdns-macos.sh > /dev/null 2>&1
     fi
 }
-
-
-
-
-        /usr/local/etc/stubby/stubby.yml
