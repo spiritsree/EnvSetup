@@ -162,6 +162,9 @@ alias ..="cd .."
 alias ...="cd ../.."
 alias ~="cd ~"
 
+# pip
+alias pip="python -m pip"
+
 # beep
 alias beep='tput bel'
 
@@ -977,7 +980,7 @@ alias        gs='git status'
 alias       gss='git status -s'
 alias        gt='git tag'
 alias       gtn='git tag -n'
-alias        gd='git diff'
+alias        gd='git diff --ignore-space-at-eol -b -w --ignore-blank-lines'
 alias       gds='git diff --staged'
 alias       gwc='git whatchanged -p --abbrev-commit --pretty=medium'
 alias        gl='git log --decorate --color --oneline'
