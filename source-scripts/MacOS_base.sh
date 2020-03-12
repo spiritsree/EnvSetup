@@ -15,6 +15,9 @@ _env_base_setup_os() {
         "${pkg_installer}" upgrade > /dev/null
     fi
 
+    # Disable brew analytics
+    "${pkg_installer}" analytics off
+
     # Installing brew services to
     # Manage background services with macOS' launchctl daemon manager
     "${pkg_installer}" services list > /dev/null 2>&1
