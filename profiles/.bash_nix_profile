@@ -45,3 +45,67 @@ alias tsocks="sudo ss -l -t"   		# open TCP sockets
 # Network related
 alias ifinfo="ip a"
 alias listen="sudo netstat -plnt"	# listening connections
+
+# Skaffold Run
+# https://skaffold.dev/docs/install/
+skaffold-run() {
+    if $(command -v skaffold > /dev/null 2>&1); then
+        skaffold run
+    else
+        curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64 2> /dev/null
+        chmod +x skaffold
+        sudo mv skaffold /usr/local/bin
+        skaffold run
+    fi
+}
+
+# GPG Keygen
+gpg-keygen() {
+    if [[ $# -ne 2 ]]; then
+        echo
+        echo 'Usage: gpg-keygen "<Name>" "<email>"'
+        echo
+    elif [[ $(gpg --list-keys | grep $2 | wc -l) -gt 0 ]]; then
+        echo "GPG Key exist for email $2"
+    else
+        if ! $(command -v rngd > /dev/null 2>&1) ; then
+            sudo apt-get install -y rng-tools > /dev/null 2>&1
+        fi
+        sudo rngd -q -r /dev/urandom
+        local rngd_pid=$(ps aux | command grep [r]ngd | awk '{ print $2 }')
+        if [[ ! -d "${HOME}/.gnupg" ]]; then
+            mkdir "${HOME}/.gnupg" > /dev/null 2>&1
+        fi
+        local gpg_gen_file=$(mktemp /tmp/gpg.XXXXXXXX)
+        cat << EOF > "${gpg_gen_file}"
+%echo Generating a GPG key, might take a while
+Key-Type: RSA
+Key-Length: 2048
+Subkey-Type: RSA
+Subkey-Length: 2048
+Name-Real: $1
+Name-Comment: $1 GPG Signing
+Name-Email: $2
+Expire-Date: 0
+%pubring $HOME/.gnupg/gpg_key.pub
+%secring $HOME/.gnupg/gpg_key.sec
+%commit
+%echo done
+EOF
+        gpg --batch --gen-key "${gpg_gen_file}"
+        unlink "${gpg_gen_file}"
+        echo "=============== GPG Key =================="
+        gpg --no-default-keyring --armor \
+            --secret-keyring "${HOME}/.gnupg/gpg_key.sec" \
+            --keyring "${HOME}/.gnupg/gpg_key.pub" \
+            --export $2
+        echo "=============== GPG Key Secret =================="
+        gpg --no-default-keyring --armor \
+            --secret-keyring "${HOME}/.gnupg/gpg_key.sec" \
+            --keyring "${HOME}/.gnupg/gpg_key.pub" \
+            --export-secret-key $2
+        if [[ -n "${rngd_pid}" ]]; then
+            sudo kill -9 "${rngd_pid}"
+        fi
+    fi
+}

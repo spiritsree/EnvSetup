@@ -5,11 +5,11 @@
 ########################################################################################################
 
 # Global Vars
-PKG_INSTALLS_COMMON='bash-completion zsh zsh-completions watch tree git tig screen tmux ruby jq yq htop yamllint jsonlint shellcheck jid colordiff go stubby knot hub'
+PKG_INSTALLS_COMMON='bash-completion zsh zsh-completions watch tree git tig screen tmux ruby jq yq htop yamllint jsonlint shellcheck jid colordiff go stubby knot hub mitmproxy kubectx'
 PKG_INSTALLS_WORK='docker docker-compose kubernetes-helm kubernetes-cli kops vagrant virtualbox terraform'
-PKG_INSTALLS_PERSONAL='google-chrome utorrent atom sublime-text vlc firefox 4k-video-downloader 4k-stogram 4k-youtube-to-mp3 4k-video-to-mp3 dash'
+PKG_INSTALLS_PERSONAL='google-chrome atom sublime-text vlc firefox 4k-video-downloader 4k-stogram 4k-youtube-to-mp3 4k-video-to-mp3 dash'
 PIP_INSTALLS='virtualenv awscli boto3 pylint'
-APP_PROFILES='.vimrc .gvimrc .tmux.conf .tmux-osx.conf .gemrc .tigrc .screenrc .irbrc .inputrc .gitconfig .gitignore .yamllint'
+APP_PROFILES='.vimrc .gvimrc .tmux.conf .tmux-osx.conf .gemrc .tigrc .screenrc .irbrc .inputrc .gitconfig .gitignore .yamllint .pylintrc'
 
 PROFILES_DIR="./profiles"
 THEMES_DIR="./themes"
@@ -163,7 +163,6 @@ _ask() {
 # This function cannot have anything to print to stdout
 _baseSetup() {
     local platform=$1
-    source "${SOURCE_SCRIPTS}/${platform}_base.sh"
     _env_base_setup_os > /dev/null 2>&1
     if [[ "${platform}" == 'MacOS' ]]; then
         pkg_installer=$(command -v brew)
@@ -221,16 +220,18 @@ _pkgInstall() {
                                                 _runAsRoot "${pkg_installer}" install "${package}" -y > /dev/null 2>&1;
                                                 }
     elif [[ "${platform}" == 'Linux' ]]; then
-        if ! rpm -qa | grep -qw "${package}"; then
+        if ! rpm -qa | grep -qw "${package}" && ! command -v "${package}" > /dev/null  2>&1; then
             ((ARG_DEBUG)) && echo "|_ _ Installing ${package}..."
             if ! _runAsRoot "${pkg_installer}" install "${package}" -y > /dev/null 2>&1; then
-                new_package=$(yum search "${package}" | grep -e "^${package}[0-9]\." | awk -F'.' '{ print $1 }' | sort -nr | head -1)
-                ((ARG_DEBUG)) && echo "|_ _ Installing ${new_package}..."
-                _runAsRoot "${pkg_installer}" install "${new_package}" -y > /dev/null 2>&1
-                pkg_bin=$(command -v "${new_package}")
-                if [[ -z "${pkg_bin}" ]]; then
-                    ((ARG_DEBUG)) && echo "|_ _ Installing ${package}..."
-                    _runAsRoot ln -s "${pkg_bin}" "/usr/bin/${package}"
+                new_package=$(yum search "${package}"  2> /dev/null | grep -e "^${package}[0-9]\." | awk -F'.' '{ print $1 }' | sort -nr | head -1)
+                if [[ -n "${new_package}" ]]; then
+                    ((ARG_DEBUG)) && echo "|_ _ Installing ${new_package}..."
+                    _runAsRoot "${pkg_installer}" install "${new_package}" -y > /dev/null 2>&1
+                    pkg_bin=$(command -v "${new_package}")
+                    if [[ -n "${pkg_bin}" ]]; then
+                        ((ARG_DEBUG)) && echo "|_ _ Linking binary ${package}..."
+                        _runAsRoot ln -s "${pkg_bin}" "/usr/bin/${package}"
+                    fi
                 fi
             fi
         fi
@@ -402,6 +403,14 @@ _profiles() {
             fi
         fi
 
+        # Sublime symlink
+        if [[ -f /Applications/Sublime\ Text.app/Contents/SharedSupport/bin/subl ]]; then
+            if [[ ! -f /usr/local/bin/sublime ]]; then
+                ((ARG_DEBUG)) && echo 'Creating symlink for sublime..'
+                ln -s /Applications/Sublime\ Text.app/Contents/SharedSupport/bin/subl /usr/local/bin/sublime
+            fi
+        fi
+
         # Copy Terminal and iTerm2 profile
         if [[ -d ~/Library/Preferences ]]; then
             if [[ ! -f ~/Library/Preferences/com.apple.Terminal.plist ]] || [[ "${force}" == 'Y' ]]; then
@@ -482,6 +491,9 @@ main() {
     platform=$(_getPlatform)
     pkg_installer=''
 
+    # Loading platform specific source routines
+    source "${SOURCE_SCRIPTS}/${platform}_base.sh"
+
     pkg_installer=$(_baseSetup "${platform}")
     ((ARG_DEBUG)) && echo "Package installer is ${pkg_installer}"
 
@@ -509,6 +521,10 @@ main() {
         echo "Package ${pip_package}"
         _pipInstall "${platform}" "${pip_package}" > /dev/null
     done
+
+    # Setting up secure DNS
+    ((ARG_DEBUG)) && echo "Setting up secure DNS"
+    _secure_dns_setup
 
     if [[ "${platform}" == 'MacOS' ]]; then
         pkg='Komodo-Edit'

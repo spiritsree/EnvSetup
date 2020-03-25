@@ -45,7 +45,7 @@ alias l.="ls -dG .*"
 alias lsd="ll | grep '^d'"
 
 #ipinfo
-alias ipinfo="echo -e \ - Public facing IP Address: ; curl ipecho.net/plain ; echo ; echo -e \ - Internal IP Address: ;  ipconfig getifaddr en0"
+alias ipinfo="echo -ne \ - Public facing IP Address:\ ; curl ipecho.net/plain ; echo ; echo -ne \ - Internal IP Address:\ ;  ipconfig getifaddr en0"
 
 # finder
 alias fopen="open -a Finder ./"
@@ -167,13 +167,15 @@ ssh-env() {
 }
 
 pyspark-install() {
-    # Tested on Apache Spark 2.1.0, Python 2.7.13 and Java 1.8.0_112
+    # Tested on Apache Spark 2.4.4, Python 3.7.5 and Java 1.8.0_112
 
     brew update > /dev/null 2>&1
 
     # For Apache Spark
     if command -v java > /dev/null; then
-        JAVA_HOME=$(/usr/libexec/java_home)
+        # Other versions will give the following error
+        # Unsupported class file major version 55
+        JAVA_HOME=$(/usr/libexec/java_home -v 1.8)
         export JAVA_HOME
     fi
 
@@ -205,4 +207,40 @@ pyspark-cleanup() {
 kubeval-install() {
     brew tap garethr/kubeval > /dev/null 2>&1
     brew install kubeval > /dev/null 2>&1
+}
+
+# Skaffold Run
+# https://skaffold.dev/docs/install/
+skaffold-run() {
+    if $(command -v skaffold > /dev/null 2>&1); then
+        skaffold run
+    else
+        curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-darwin-amd64 2> /dev/null
+        chmod +x skaffold
+        sudo mv skaffold /usr/local/bin
+        skaffold run
+    fi
+}
+
+# Stubby
+stubby-dns() {
+    # Use stubby DNS
+    if [[ $(ps aux | grep [s]tubby | wc -l) -eq 0 ]]; then
+        echo 'Stubby service not running...''
+        echo 'Please start stubby and try again...'
+    elif $(dig +short +time=5 @127.0.0.1 www.example.com > /dev/null 2>&1); then
+        sudo /usr/local/opt/stubby/sbin/stubby-setdns-macos.sh -r > /dev/null 2>&1
+        echo 'Switched to stubby DNS...'
+    else
+        echo 'Stubby resoultion not working...'
+        echo 'Please fix it and try again...'
+    fi
+}
+
+stubby-dns-revert() {
+    # Revert to normal ISP DNS
+    sudo /usr/local/opt/stubby/sbin/stubby-setdns-macos.sh -r > /dev/null 2>&1
+    if $(dig +short +time=5 www.example.com > /dev/null 2>&1); then
+        echo 'Successfully reverted normal DNS...'
+    fi
 }

@@ -10,7 +10,7 @@ repo_gpgcheck=1
 gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
 EOF
     sudo "${pkg_installer}" update -y > /dev/null 2>&1
-    sudo "${pkg_installer}" install vim-enhanced -y > /dev/null 2>&1
+    sudo "${pkg_installer}" install vim-enhanced wget curl -y > /dev/null 2>&1
     sudo "${pkg_installer}" install epel-release -y > /dev/null 2>&1
 
     # Python installation
@@ -32,4 +32,9 @@ EOF
     curl -O https://bootstrap.pypa.io/get-pip.py 2> /dev/null
     sudo python3 get-pip.py > /dev/null 2>&1
     pip3 install --upgrade pip > /dev/null 2>&1
+}
+
+_secure_dns_setup() {
+    local stubby_config="/etc/stubby.yml"
+    echo "Follow this steps https://dnsprivacy.org/wiki/pages/viewpage.action?pageId=3145786"
 }

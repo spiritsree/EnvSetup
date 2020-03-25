@@ -162,6 +162,9 @@ alias ..="cd .."
 alias ...="cd ../.."
 alias ~="cd ~"
 
+# pip
+alias pip="python -m pip"
+
 # beep
 alias beep='tput bel'
 
@@ -193,6 +196,17 @@ colors() {
 alias myip="dig +short myip.opendns.com @resolver1.opendns.com"   # curl icanhazip.com
 alias mylocalip="ifconfig | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p'"
 alias location="curl ipinfo.io 2> /dev/null | jq ."
+ipfind() {
+    if [[ -z "$*" ]]; then
+        echo
+        echo 'Find location of given IP. Alternatively you can use https://ipfind.com/'
+        echo
+        echo 'Usage: lgrep <ip>'
+        echo
+    else
+        curl "https://www.iplocate.io/api/lookup/$1" 2> /dev/null | jq .
+    fi
+}
 
 # grep aliases
 alias grep='grep --color=always'
@@ -966,7 +980,7 @@ alias        gs='git status'
 alias       gss='git status -s'
 alias        gt='git tag'
 alias       gtn='git tag -n'
-alias        gd='git diff'
+alias        gd='git diff --ignore-space-at-eol -b -w --ignore-blank-lines'
 alias       gds='git diff --staged'
 alias       gwc='git whatchanged -p --abbrev-commit --pretty=medium'
 alias        gl='git log --decorate --color --oneline'
@@ -1519,5 +1533,14 @@ git-ssh-setup() {
             echo "              OR"
             echo "  git config --global user.email <example@gmail.com>"
         fi
+    fi
+}
+
+cloudflare-dns-test() {
+    kdig_bin=$(command -v kdig)
+    if [[ -n "${kdig_bin}" ]]; then
+        "${kdig_bin}" -d @1.1.1.1 +tls-ca +tls-host=cloudflare-dns.com  example.com
+    else
+        echo "kdig binary not found..."
     fi
 }

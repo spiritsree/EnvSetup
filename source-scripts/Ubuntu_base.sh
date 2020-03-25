@@ -1,7 +1,7 @@
 _env_base_setup_os() {
     local lsb_release=$(command -p lsb_release -r -s)
     local pkg_installer=$(command -v apt-get)
-    "${pkg_installer}" install apt-transport-https -y > /dev/null 2>&1;
+    "${pkg_installer}" install apt-transport-https curl wget -y > /dev/null 2>&1;
 
     # adding google cloud key to apt
     google_key=$(mktemp /tmp/google_key.XXXXXXXXXX)
@@ -48,4 +48,48 @@ _env_base_setup_os() {
     # fi
     sudo apt-get install -y python3 python3-pip  > /dev/null 2>&1
     pip3 install --upgrade pip > /dev/null 2>&1
+}
+
+
+_secure_dns_setup() {
+    local stubby_config="/etc/stubby/stubby.yml"
+
+    # Stubby Config
+    if ! diff <(shasum "${stubby_config}" | awk '{ print $1 }') \
+              <(shasum themes/stubby.yml | awk '{ print $1 }') > /dev/null 2>&1; then
+        ((ARG_DEBUG)) && echo 'Copying stubby config...'
+        cp themes/stubby.yml "${stubby_config}"
+    fi
+
+    # Start stubby service
+    if [[ $(systemctl status stubby | grep 'running' | wc -l) -eq 0 ]]; then
+        ((ARG_DEBUG)) && echo 'Starting stubby service...'
+        sudo systemctl start stubby > /dev/null 2>&1
+    else
+        ((ARG_DEBUG)) && echo 'Restarting stubby service...'
+        sudo systemctl restart stubby > /dev/null 2>&1
+    fi
+
+    # Verify Stubby
+    if [[ $(sudo netstat -lnptu | grep stubby | command grep "127.0.0.1:53" | wc -l) -gt 0 ]]; then
+        ((ARG_DEBUG)) && echo 'Stubby listens on 127.0.0.1:53...'
+    fi
+
+    if [[ $(sudo netstat -lnptu | grep systemd-resolve | command grep "127.0.0.53:53" | wc -l) -gt 0 ]]; then
+        ((ARG_DEBUG)) && echo 'systemd-resolve listens on 127.0.0.53:53...'
+    fi
+
+    # Verify if DNS resoultion works
+    if $(dig +short +time=5 @127.0.0.1 www.example.com > /dev/null 2>&1); then
+        ((ARG_DEBUG)) && echo 'Stubby resolution success, hence setting system to use stubby...'
+        local netplan_file=$(find /etc/netplan -type f | command grep yaml | head -1)
+        local net_interfaces=$(yq read -j "${netplan_file}" network.ethernets | jq 'keys[]')
+        for net_iface in $net_interfaces; do
+            sudo yq write -i "${netplan_file}" network.ethernets.$net_iface.nameservers.addresses[+] "127.0.0.1"
+        done
+        sudo netplan apply > /dev/null 2>&1 && sleep 5
+        if [[ $(systemd-resolve --status | command grep "127.0.0.1" | wc -l) -gt 0 ]]; then
+            ((ARG_DEBUG)) && echo 'System is using stubby for resolution...'
+        fi
+    fi
 }
