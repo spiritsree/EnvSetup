@@ -28,9 +28,10 @@ Examples:
 
 ## Documentation
 
-For details check the [Docs](./Docs)
+For details check the [Documentation](./docs)
 
-* [TMUX Cheatsheet](./Docs/tmux_cheatsheet.md)
+* [TMUX Cheatsheet](./docs/tmux_cheatsheet.md)
+* [Python Environment](./docs/pyenv.md)
 
 ## Reference
 
