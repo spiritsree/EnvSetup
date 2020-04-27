@@ -1,6 +1,9 @@
+# shellcheck shell=bash
+
 _env_base_setup_os() {
-    local lsb_release=$(command -p lsb_release -r -s)
-    local pkg_installer=$(command -v apt-get)
+    local lsb_release pkg_installer
+    lsb_release=$(command -p lsb_release -r -s)
+    pkg_installer=$(command -v apt-get)
     "${pkg_installer}" install apt-transport-https curl wget -y > /dev/null 2>&1;
 
     # adding google cloud key to apt
@@ -53,7 +56,7 @@ _env_base_setup_os() {
 
 _secure_dns_setup() {
     local stubby_config="/etc/stubby/stubby.yml"
-
+    local netplan_file net_interfaces
     # Stubby Config
     if ! diff <(shasum "${stubby_config}" | awk '{ print $1 }') \
               <(shasum themes/stubby.yml | awk '{ print $1 }') > /dev/null 2>&1; then
@@ -62,7 +65,7 @@ _secure_dns_setup() {
     fi
 
     # Start stubby service
-    if [[ $(systemctl status stubby | grep 'running' | wc -l) -eq 0 ]]; then
+    if [[ $(systemctl status stubby | grep -c 'running') -eq 0 ]]; then
         ((ARG_DEBUG)) && echo 'Starting stubby service...'
         sudo systemctl start stubby > /dev/null 2>&1
     else
@@ -80,12 +83,12 @@ _secure_dns_setup() {
     fi
 
     # Verify if DNS resoultion works
-    if $(dig +short +time=5 @127.0.0.1 www.example.com > /dev/null 2>&1); then
+    if dig +short +time=5 @127.0.0.1 www.example.com > /dev/null 2>&1; then
         ((ARG_DEBUG)) && echo 'Stubby resolution success, hence setting system to use stubby...'
-        local netplan_file=$(find /etc/netplan -type f | command grep yaml | head -1)
-        local net_interfaces=$(yq read -j "${netplan_file}" network.ethernets | jq 'keys[]')
+        netplan_file=$(find /etc/netplan -type f | command grep yaml | head -1)
+        net_interfaces=$(yq read -j "${netplan_file}" network.ethernets | jq 'keys[]')
         for net_iface in $net_interfaces; do
-            sudo yq write -i "${netplan_file}" network.ethernets.$net_iface.nameservers.addresses[+] "127.0.0.1"
+            sudo yq write -i "${netplan_file}" "network.ethernets.${net_iface}.nameservers.addresses[+]" "127.0.0.1"
         done
         sudo netplan apply > /dev/null 2>&1 && sleep 5
         if [[ $(systemd-resolve --status | command grep "127.0.0.1" | wc -l) -gt 0 ]]; then

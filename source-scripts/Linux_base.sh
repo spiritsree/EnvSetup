@@ -1,5 +1,8 @@
+# shellcheck shell=bash
+
 _env_base_setup_os() {
-    local pkg_installer=$(command -v yum)
+    local pkg_installer
+    pkg_installer=$(command -v yum)
     sudo dd of=/etc/yum.repos.d/kubernetes.repo  2> /dev/null <<EOF
 [kubernetes]
 name=Kubernetes
@@ -37,4 +40,5 @@ EOF
 _secure_dns_setup() {
     local stubby_config="/etc/stubby.yml"
     echo "Follow this steps https://dnsprivacy.org/wiki/pages/viewpage.action?pageId=3145786"
+    echo "Config is ${stubby_config}"
 }

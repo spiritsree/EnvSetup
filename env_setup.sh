@@ -10,6 +10,7 @@ PKG_INSTALLS_WORK='docker docker-compose kubernetes-helm kubernetes-cli kops vag
 PKG_INSTALLS_PERSONAL='google-chrome atom sublime-text vlc firefox 4k-video-downloader 4k-stogram 4k-youtube-to-mp3 4k-video-to-mp3 dash'
 PIP_INSTALLS='virtualenv awscli boto3 pylint'
 APP_PROFILES='.vimrc .gvimrc .tmux.conf .tmux-osx.conf .gemrc .tigrc .screenrc .irbrc .inputrc .gitconfig .gitignore .yamllint .pylintrc'
+KOMODO_IDE_VERSION='12.0.1'
 
 PROFILES_DIR="./profiles"
 THEMES_DIR="./themes"
@@ -492,6 +493,8 @@ main() {
     pkg_installer=''
 
     # Loading platform specific source routines
+    # shellcheck source=source-scripts/MacOS_base.sh
+    # shellcheck disable=SC1091
     source "${SOURCE_SCRIPTS}/${platform}_base.sh"
 
     pkg_installer=$(_baseSetup "${platform}")
@@ -530,11 +533,11 @@ main() {
         pkg='Komodo-Edit'
         regex=${pkg//-/ }
         if [[ $(pkgutil --pkgs | grep -ci "${pkg}") -eq 0 ]] && [[ $(find -E /Applications -maxdepth 1 -regex ".*${regex}.*" | wc -l) -eq 0 ]]; then
-            komodo_string=$(curl http://downloads.activestate.com/Komodo/releases/11.1.1/ 2> /dev/null \
+            komodo_string=$(curl "http://downloads.activestate.com/Komodo/releases/${KOMODO_IDE_VERSION}/" 2> /dev/null \
                           | command -p grep 'Komodo-Edit-' \
                           | command -p grep 'dmg' \
                           | sed -E 's/.*>(Komodo-Edit-.*\.dmg)<.*/\1/')
-            _installDmg "http://downloads.activestate.com/Komodo/releases/11.1.1/${komodo_string}"
+            _installDmg "http://downloads.activestate.com/Komodo/releases/${KOMODO_IDE_VERSION}/${komodo_string}"
         fi
     fi
 
