@@ -232,12 +232,16 @@ upstream_recursive_servers:
     tls_auth_name: "cloudflare-dns.com"
     tls_pubkey_pinset:
       - digest: "sha256"
-        value: V6zes8hHBVwUECsHf7uV5xGM7dj3uMXIS9//7qC8+jU=
+        value: od9obscoXQND56/DikypZrJkXGvbQV5Y61QGfcNitHo=
+      - digest: "sha256"
+        value: e0IRz5Tio3GA1Xs4fUVWmH1xHDiH2dMbVtCBSkOIdqM=
   - address_data: 1.0.0.1
     tls_auth_name: "cloudflare-dns.com"
     tls_pubkey_pinset:
       - digest: "sha256"
-        value: V6zes8hHBVwUECsHf7uV5xGM7dj3uMXIS9//7qC8+jU=
+        value: od9obscoXQND56/DikypZrJkXGvbQV5Y61QGfcNitHo=
+      - digest: "sha256"
+        value: e0IRz5Tio3GA1Xs4fUVWmH1xHDiH2dMbVtCBSkOIdqM=
 ## The Uncensored DNS servers
 #  - address_data: 89.233.43.71
 #    tls_auth_name: "unicast.censurfridns.dk"
