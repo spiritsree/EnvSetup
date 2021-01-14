@@ -212,7 +212,7 @@ kubeval-install() {
 # Skaffold Run
 # https://skaffold.dev/docs/install/
 skaffold-run() {
-    if $(command -v skaffold > /dev/null 2>&1); then
+    if command -v skaffold > /dev/null 2>&1; then
         skaffold run
     else
         curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-darwin-amd64 2> /dev/null
@@ -225,11 +225,11 @@ skaffold-run() {
 # Stubby
 stubby-dns() {
     # Use stubby DNS
-    if [[ $(ps aux | grep [s]tubby | wc -l) -eq 0 ]]; then
-        echo 'Stubby service not running...''
+    if [[ $(pgrep '[s]tubby' | wc -l) -eq 0 ]]; then
+        echo 'Stubby service not running...'
         echo 'Please start stubby and try again...'
-    elif $(dig +short +time=5 @127.0.0.1 www.example.com > /dev/null 2>&1); then
-        sudo /usr/local/opt/stubby/sbin/stubby-setdns-macos.sh -r > /dev/null 2>&1
+    elif dig +short +time=5 @127.0.0.1 www.example.com > /dev/null 2>&1; then
+        sudo /usr/local/opt/stubby/sbin/stubby-setdns-macos.sh > /dev/null 2>&1
         echo 'Switched to stubby DNS...'
     else
         echo 'Stubby resoultion not working...'
@@ -240,7 +240,15 @@ stubby-dns() {
 stubby-dns-revert() {
     # Revert to normal ISP DNS
     sudo /usr/local/opt/stubby/sbin/stubby-setdns-macos.sh -r > /dev/null 2>&1
-    if $(dig +short +time=5 www.example.com > /dev/null 2>&1); then
+    if dig +short +time=5 www.example.com > /dev/null 2>&1; then
         echo 'Successfully reverted normal DNS...'
     fi
+}
+
+stubby-help() {
+    # Help Stubby troubleshoot
+    echo "sudo /usr/local/opt/stubby/sbin/stubby-setdns-macos.sh -r"
+    echo "dig @127.0.0.1 www.example.com"
+    echo "kdig -d @1.1.1.1 +tls-ca +tls-host=cloudflare-dns.com  example.com"
+    echo "kdig -d @1.0.0.1 +tls-ca +tls-host=cloudflare-dns.com  example.com"
 }
