@@ -229,7 +229,7 @@ stubby-dns() {
         echo 'Stubby service not running...'
         echo 'Please start stubby and try again...'
     elif dig +short +time=5 @127.0.0.1 www.example.com > /dev/null 2>&1; then
-        sudo /usr/local/opt/stubby/sbin/stubby-setdns-macos.sh -r > /dev/null 2>&1
+        sudo /usr/local/opt/stubby/sbin/stubby-setdns-macos.sh > /dev/null 2>&1
         echo 'Switched to stubby DNS...'
     else
         echo 'Stubby resoultion not working...'
@@ -243,4 +243,12 @@ stubby-dns-revert() {
     if dig +short +time=5 www.example.com > /dev/null 2>&1; then
         echo 'Successfully reverted normal DNS...'
     fi
+}
+
+stubby-help() {
+    # Help Stubby troubleshoot
+    echo "sudo /usr/local/opt/stubby/sbin/stubby-setdns-macos.sh -r"
+    echo "dig @127.0.0.1 www.example.com"
+    echo "kdig -d @1.1.1.1 +tls-ca +tls-host=cloudflare-dns.com  example.com"
+    echo "kdig -d @1.0.0.1 +tls-ca +tls-host=cloudflare-dns.com  example.com"
 }
