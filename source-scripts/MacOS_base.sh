@@ -2,17 +2,17 @@
 
 _env_base_setup_os() {
     # Ruby (MAC comes with ruby by default)
-    local ruby_bin pkg_installer python_version
-    ruby_bin=$(command -v ruby)
-    if [[ -z "${ruby_bin}" ]]; then
-        echo "Ruby is not installed."
+    local bash_bin pkg_installer python_version
+    bash_bin=$(command -v bash)
+    if [[ -z "${bash_bin}" ]]; then
+        echo "Bash is not installed."
         exit
     fi
 
     # Homebrew install
     pkg_installer=$(command -v brew)
     if [[ -z "${pkg_installer}" ]] ; then
-        "${ruby_bin}" -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+        "${bash_bin}" -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     else
         "${pkg_installer}" update > /dev/null
         "${pkg_installer}" upgrade > /dev/null
