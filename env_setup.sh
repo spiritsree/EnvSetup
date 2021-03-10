@@ -6,11 +6,12 @@
 
 # Global Vars
 PKG_INSTALLS_COMMON='bash-completion zsh zsh-completions watch tree git tig screen tmux ruby jq yq htop yamllint jsonlint shellcheck jid colordiff go stubby knot hub mitmproxy kubectx'
-PKG_INSTALLS_WORK='docker docker-compose kubernetes-helm kubernetes-cli kops vagrant virtualbox tfenv sublime-text'
+PKG_INSTALLS_WORK='docker docker-compose kubernetes-helm kubernetes-cli kops vagrant virtualbox tfenv sublime-text git-delta'
 PKG_INSTALLS_PERSONAL='google-chrome atom sublime-text vlc firefox 4k-video-downloader 4k-stogram 4k-youtube-to-mp3 4k-video-to-mp3 dash'
-PIP_INSTALLS='virtualenv awscli boto3 pylint'
+PIP_INSTALLS='virtualenv awscli boto3 pylint PyGithub'
 APP_PROFILES='.vimrc .gvimrc .tmux.conf .tmux-osx.conf .gemrc .tigrc .screenrc .irbrc .inputrc .gitconfig .gitignore .yamllint .pylintrc'
 KOMODO_IDE_VERSION='12.0.1'
+PYTHON_VER='3'
 
 PROFILES_DIR="./profiles"
 THEMES_DIR="./themes"
@@ -364,6 +365,9 @@ _profiles() {
                 if [[ "${platform}" != 'MacOS' ]]; then
                     git config --global core.editor vi
                 fi
+                if [[ -n "$(command -v delta)" ]]; then
+                    git config --global core.pager delta
+                fi
             elif [[ -f ~/.gitconfig ]] && [[ "${force}" == 'Y' ]]; then
                 name=$(git config user.name)
                 email=$(git config user.email)
@@ -371,6 +375,9 @@ _profiles() {
                 cp ${PROFILES_DIR}/.gitconfig ~/.gitconfig
                 git config --global user.name "${name}"
                 git config --global user.email "${email}"
+                if [[ -n "$(command -v delta)" ]]; then
+                    git config --global core.pager delta
+                fi
             fi
         elif [[ ! -f ~/${conf} ]] || [[ "${force}" == 'Y' ]]; then
             ((ARG_DEBUG)) && echo "Copying the profile ${conf}.."

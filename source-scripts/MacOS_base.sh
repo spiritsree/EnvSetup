@@ -34,10 +34,13 @@ _env_base_setup_os() {
         eval "$(pyenv init -)"
         eval "$(pyenv virtualenv-init -)"
     fi
-    python_version=$(pyenv install --list | awk '{ print $1 }' | grep -E '^3.7' | tail -1)
+    python_version=$(pyenv install --list | awk '{ print $1 }' | grep -E "^${PYTHON_VER}.(\d+).(\d+)$" | tail -1)
     if [[ -n "${python_version}" ]]; then
         pyenv install "${python_version}" > /dev/null 2>&1
         pyenv global "${python_version}"
+    fi
+    if [[ -n "$(command -v pip)" ]]; then
+        pip install --upgrade pip > /dev/null 2>&1
     fi
 }
 
