@@ -64,3 +64,4 @@ For details check the [Documentation](./docs)
 * [Yq doc](https://yq.readthedocs.io/en/latest/)
 * [Yq](https://github.com/mikefarah/yq)
 * [Zsh](https://ohmyz.sh/)
+* [LittleSnitch](https://www.obdev.at/products/index.html) `codesign --verify -R="anchor apple generic and certificate leaf[subject.OU] = MLZF7K7B5R" ~/Downloads/LittleSnitch*.dmg`
