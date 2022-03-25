@@ -39,15 +39,15 @@ _env_base_setup_os() {
         pyenv install "${python_version}" > /dev/null 2>&1
         pyenv global "${python_version}"
     fi
-    if [[ -n "$(command -v pip)" ]]; then
-        pip install --upgrade pip > /dev/null 2>&1
+    if [[ -n "$(command -v python3)" &&  -n "$(command -v pip3)" ]]; then
+        python3 -m pip install --upgrade pip > /dev/null 2>&1
     fi
 }
 
 _secure_dns_setup() {
     local pkg_installer_bin stubby_config
     pkg_installer_bin=$(command -v brew)
-    stubby_config="/usr/local/etc/stubby/stubby.yml"
+    stubby_config="/opt/homebrew/etc/stubby/stubby.yml"
     # Stubby Config
     if ! diff <(shasum "${stubby_config}" | awk '{ print $1 }') \
               <(shasum themes/stubby.yml | awk '{ print $1 }') > /dev/null 2>&1; then

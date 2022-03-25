@@ -6,11 +6,10 @@
 
 # Global Vars
 PKG_INSTALLS_COMMON='bash-completion zsh zsh-completions watch tree git tig screen tmux ruby jq yq htop yamllint jsonlint shellcheck jid colordiff go stubby knot hub mitmproxy kubectx'
-PKG_INSTALLS_WORK='docker docker-compose kubernetes-helm kubernetes-cli kops vagrant virtualbox tfenv sublime-text git-delta'
+PKG_INSTALLS_WORK='awscli docker docker-compose kubernetes-helm kubernetes-cli kops vagrant virtualbox tfenv sublime-text git-delta'
 PKG_INSTALLS_PERSONAL='google-chrome atom sublime-text vlc firefox 4k-video-downloader 4k-stogram 4k-youtube-to-mp3 4k-video-to-mp3 dash'
-PIP_INSTALLS='virtualenv awscli boto3 pylint PyGithub'
+PIP_INSTALLS='virtualenv boto3 pylint PyGithub'
 APP_PROFILES='.vimrc .gvimrc .tmux.conf .tmux-osx.conf .gemrc .tigrc .screenrc .irbrc .inputrc .gitconfig .gitignore .yamllint .pylintrc'
-KOMODO_IDE_VERSION='12.0.1'
 PYTHON_VER='3'
 
 PROFILES_DIR="./profiles"
@@ -207,7 +206,7 @@ _pkgInstall() {
     if [[ "${platform}" == 'MacOS' ]]; then
         ${pkg_installer} list "${package}" > /dev/null 2>&1
         brew_present=$?
-       ${pkg_installer} cask list "${package}" > /dev/null 2>&1
+       ${pkg_installer} list --cask "${package}" > /dev/null 2>&1
         brew_cask_present=$?
         (( brew_present && brew_cask_present )) && { ((ARG_DEBUG)) && echo "|_ _ Installing ${package}...";
                                                     ${pkg_installer} install "${package}" > /dev/null 2>&1;
@@ -402,11 +401,11 @@ _profiles() {
         fi
 
         # Copy sublime custom profiles
-        if [[ -d ~/Library/Application\ Support/Sublime\ Text\ 3 ]]; then
-            if [[ ! -f ~/Library/Application\ Support/Sublime\ Text\ 3/Packages/User/Preferences.sublime-settings ]] || [[ "${force}" == 'Y' ]]; then
+        if [[ -d ~/Library/Application\ Support/Sublime\ Text ]]; then
+            if [[ ! -f ~/Library/Application\ Support/Sublime\ Text/Packages/User/Preferences.sublime-settings ]] || [[ "${force}" == 'Y' ]]; then
             	for sprofile in Preferences.sublime-settings Solarized.dark.sublime-color-scheme Solarized.light.sublime-color-scheme; do
             		((ARG_DEBUG)) && echo "Copying the profile ${sprofile}.."
-                	cp ${THEMES_DIR}/${sprofile} ~/Library/Application\ Support/Sublime\ Text\ 3/Packages/User/
+                	cp ${THEMES_DIR}/${sprofile} ~/Library/Application\ Support/Sublime\ Text/Packages/User/
                 done
             fi
         fi
@@ -415,7 +414,7 @@ _profiles() {
         if [[ -f /Applications/Sublime\ Text.app/Contents/SharedSupport/bin/subl ]]; then
             if [[ ! -f /usr/local/bin/sublime ]]; then
                 ((ARG_DEBUG)) && echo 'Creating symlink for sublime..'
-                ln -s /Applications/Sublime\ Text.app/Contents/SharedSupport/bin/subl /usr/local/bin/sublime
+                sudo ln -s /Applications/Sublime\ Text.app/Contents/SharedSupport/bin/subl /usr/local/bin/sublime
             fi
         fi
 
@@ -535,18 +534,6 @@ main() {
     # Setting up secure DNS
     ((ARG_DEBUG)) && echo "Setting up secure DNS"
     _secure_dns_setup
-
-    if [[ "${platform}" == 'MacOS' ]]; then
-        pkg='Komodo-Edit'
-        regex=${pkg//-/ }
-        if [[ $(pkgutil --pkgs | grep -ci "${pkg}") -eq 0 ]] && [[ $(find -E /Applications -maxdepth 1 -regex ".*${regex}.*" | wc -l) -eq 0 ]]; then
-            komodo_string=$(curl "http://downloads.activestate.com/Komodo/releases/${KOMODO_IDE_VERSION}/" 2> /dev/null \
-                          | command -p grep 'Komodo-Edit-' \
-                          | command -p grep 'dmg' \
-                          | sed -E 's/.*>(Komodo-Edit-.*\.dmg)<.*/\1/')
-            _installDmg "http://downloads.activestate.com/Komodo/releases/${KOMODO_IDE_VERSION}/${komodo_string}"
-        fi
-    fi
 
     if [[ ${ARG_FORCE} -eq 1 ]]; then
         ((ARG_DEBUG)) && echo 'Overwriting if any profiles exists with --force option !!!'
