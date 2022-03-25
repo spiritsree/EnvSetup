@@ -163,7 +163,7 @@ alias ...="cd ../.."
 alias ~="cd ~"
 
 # pip
-alias pip="python -m pip"
+alias pip="python3 -m pip"
 
 # beep
 alias beep='tput bel'

@@ -132,9 +132,20 @@
 [help]
     browser = gitscm
 
+[interactive]
+    diffFilter = delta --color-only
+
 [branch]
     autosetupmerge  = true
     autosetuprebase = always
+
+[delta]
+    plus-color = "#012800"
+    minus-color = "#340001"
+    minus-style = red bold ul "#ffeeee"
+    syntax-theme = Monokai Extended
+    line-numbers = true
+    side-by-side = true
 
 [diff]
     renames 		= copies

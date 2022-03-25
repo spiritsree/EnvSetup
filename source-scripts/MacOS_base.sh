@@ -34,17 +34,20 @@ _env_base_setup_os() {
         eval "$(pyenv init -)"
         eval "$(pyenv virtualenv-init -)"
     fi
-    python_version=$(pyenv install --list | awk '{ print $1 }' | grep -E '^3.7' | tail -1)
+    python_version=$(pyenv install --list | awk '{ print $1 }' | grep -E "^${PYTHON_VER}.(\d+).(\d+)$" | tail -1)
     if [[ -n "${python_version}" ]]; then
         pyenv install "${python_version}" > /dev/null 2>&1
         pyenv global "${python_version}"
+    fi
+    if [[ -n "$(command -v python3)" &&  -n "$(command -v pip3)" ]]; then
+        python3 -m pip install --upgrade pip > /dev/null 2>&1
     fi
 }
 
 _secure_dns_setup() {
     local pkg_installer_bin stubby_config
     pkg_installer_bin=$(command -v brew)
-    stubby_config="/usr/local/etc/stubby/stubby.yml"
+    stubby_config="/opt/homebrew/etc/stubby/stubby.yml"
     # Stubby Config
     if ! diff <(shasum "${stubby_config}" | awk '{ print $1 }') \
               <(shasum themes/stubby.yml | awk '{ print $1 }') > /dev/null 2>&1; then
